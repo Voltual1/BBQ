@@ -12,6 +12,7 @@ import android.content.Context
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +37,9 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 // 关键：导入 FileActionUtil
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
+import androidx.compose.foundation.lazy.LazyItemScope
+import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun DownloadScreen(
@@ -90,6 +94,61 @@ fun DownloadTaskItem(
     viewModel: DownloadViewModel
 ) {
     val context = LocalContext.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    
+    // 长按处理
+    val onLongClick: () -> Unit = {
+        showDeleteDialog = true
+    }
+    
+    // 删除任务
+    val onDeleteConfirm: () -> Unit = {
+        coroutineScope.launch {
+            // 删除对应的文件
+            val file = File(task.savePath, task.fileName)
+            if (file.exists()) {
+                file.delete()
+            }
+            
+            // 从数据库中删除任务
+            viewModel.deleteDownloadTask(task)
+            
+            // 如果当前正在下载这个任务，取消下载
+            if (viewModel.downloadStatus.value is DownloadStatus.Downloading ||
+                viewModel.downloadStatus.value is DownloadStatus.Pending) {
+                viewModel.cancelDownload()
+            }
+        }
+        showDeleteDialog = false
+    }
+    
+    // 对话框
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("删除下载任务") },
+            text = { 
+                Text("确定要删除下载任务 \"${task.fileName}\" 及其对应的文件吗？此操作不可撤销。") 
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = onDeleteConfirm,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("删除")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+    
     val status = when (task.status) {
         DownloadStatus.Idle::class.java.simpleName -> DownloadStatus.Idle
         DownloadStatus.Pending::class.java.simpleName -> DownloadStatus.Pending
@@ -104,23 +163,49 @@ fun DownloadTaskItem(
             totalBytes = task.totalBytes
         )
         DownloadStatus.Success::class.java.simpleName -> {
-            val file = java.io.File(task.savePath, task.fileName)
+            val file = File(task.savePath, task.fileName)
             DownloadStatus.Success(file = file)
         }
         DownloadStatus.Error::class.java.simpleName -> DownloadStatus.Error(message = "未知错误")
         else -> DownloadStatus.Idle
     }
 
-    when (status) {
-        is DownloadStatus.Idle -> EmptyDownloadState()
-        is DownloadStatus.Pending -> PendingDownloadState()
-        is DownloadStatus.Downloading -> DownloadingState(
-            status = status,
-            onCancel = { viewModel.cancelDownload() }
-        )
-        is DownloadStatus.Paused -> PausedState(status)
-        is DownloadStatus.Success -> SuccessState(status)
-        is DownloadStatus.Error -> ErrorState(status)
+    // 使用Modifier添加长按点击事件
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(
+                onClick = { 
+                    // 普通点击：根据状态执行相应操作
+                    when (status) {
+                        is DownloadStatus.Success -> {
+                            FileActionUtil.openFile(context, status.file)
+                        }
+                        // 其他状态可以添加相应的点击操作
+                        else -> {
+                            // 默认不执行任何操作
+                        }
+                    }
+                },
+                indication = null, // 移除默认的水波纹效果
+                onLongClick = onLongClick
+            )
+    ) {
+        when (status) {
+            is DownloadStatus.Idle -> EmptyDownloadState()
+            is DownloadStatus.Pending -> PendingDownloadState()
+            is DownloadStatus.Downloading -> DownloadingState(
+                status = status,
+                onCancel = { 
+                    // 长按删除时也会触发取消，这里只处理普通点击取消
+                    viewModel.cancelDownload() 
+                }
+            )
+            is DownloadStatus.Paused -> PausedState(status)
+            is DownloadStatus.Success -> SuccessState(status)
+            is DownloadStatus.Error -> ErrorState(status)
+        }
     }
 }
 

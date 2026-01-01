@@ -53,6 +53,16 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             isBound = false
         }
     }
+    
+
+    /**
+     * 删除下载任务（从数据库）
+     */
+    fun deleteDownloadTask(task: DownloadTask) {
+        viewModelScope.launch {
+            downloadTaskDao.delete(task)
+        }
+    }    
 
     init {
         bindService()

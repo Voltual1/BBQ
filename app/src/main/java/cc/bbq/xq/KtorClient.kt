@@ -38,7 +38,7 @@ import io.ktor.http.content.*
 
 object KtorClient {
     private const val BASE_URL = "http://apk.xiaoqu.online/"
-    private const val UPLOAD_BASE_URL = "http://wailian.ccccocccc.cc/"
+    private const val UPLOAD_BASE_URL = "https://file.bz6.top/"
     private const val WANYUEYUN_UPLOAD_BASE_URL = "http://wanyueyun-x.xbjstd.cn:9812/"
     private const val MAX_RETRIES = 3
     private const val RETRY_DELAY = 1000L
