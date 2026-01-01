@@ -135,6 +135,9 @@ LaunchedEffect(Unit) {
         )
     }
     
+    
+   }
+    
     // 监听支付导航事件
     LaunchedEffect(Unit) {
         viewModel.navigateToPaymentEvent.collectLatest { paymentInfo ->
