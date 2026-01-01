@@ -147,7 +147,7 @@ fun triggerPurchase() {
             handleDownloadClick()
         }
     }
-
+}
 
     // 退款信息数据类
     data class RefundInfo(
