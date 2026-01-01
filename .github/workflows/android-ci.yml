@@ -48,6 +48,7 @@ jobs:
       - name: Build with Gradle
         run: |
                                        ./gradlew assembleRelease
+                                       
 
       - name: Get version info
         id: version
