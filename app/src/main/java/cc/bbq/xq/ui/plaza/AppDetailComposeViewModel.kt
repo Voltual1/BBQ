@@ -156,22 +156,43 @@ class AppDetailComposeViewModel(
     }
 
     // 请求更新功能（仅小趣空间）
-    fun requestUpdate() {
-        viewModelScope.launch {
-            val detail = _appDetail.value ?: return@launch
-            
-            if (detail.store == AppStore.XIAOQU_SPACE) {
-                val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
-                if (raw != null) {
-                    // 使用 KtorClient 的 JsonConverter 将 AppDetail 转换为 JSON 字符串
-                    val appDetailJson = KtorClient.JsonConverter.toJson(raw)
-                    _updateEvent.emit(appDetailJson)
+    // 请求更新功能（仅小趣空间）
+fun requestUpdate() {
+    viewModelScope.launch {
+        val detail = _appDetail.value ?: return@launch
+        
+        if (detail.store == AppStore.XIAOQU_SPACE) {
+            val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+            if (raw != null) {
+                // 调试：先显示原始数据
+                _snackbarEvent.tryEmit("原始数据: ID=${raw.id}, Name=${raw.appname}")
+                
+                // 使用 KtorClient 的 JsonConverter 将 AppDetail 转换为 JSON 字符串
+                val appDetailJson = try {
+                    KtorClient.JsonConverter.toJson(raw)
+                } catch (e: Exception) {
+                    _snackbarEvent.tryEmit("JSON转换失败: ${e.message}")
+                    return@launch
                 }
+                
+                // 调试：显示JSON字符串（前100字符）
+                val preview = if (appDetailJson.length > 100) 
+                    "${appDetailJson.substring(0, 100)}..." 
+                else appDetailJson
+                _snackbarEvent.tryEmit("JSON预览: $preview")
+                
+                // 发送更新事件
+                _snackbarEvent.tryEmit("正在发送更新事件...")
+                _updateEvent.emit(appDetailJson)
+                _snackbarEvent.tryEmit("更新事件已发送")
             } else {
-                _snackbarEvent.tryEmit("该商店不支持更新功能")
+                _snackbarEvent.tryEmit("raw数据为空或类型不匹配")
             }
+        } else {
+            _snackbarEvent.tryEmit("该商店不支持更新功能")
         }
     }
+
     
     // 分享链接
     fun generateShareLink(): String? {

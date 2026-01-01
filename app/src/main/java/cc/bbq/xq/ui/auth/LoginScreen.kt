@@ -137,7 +137,7 @@ fun LoginContent(
             } else {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "当前平台暂不支持应用内注册，请前往官网注册。",
+                    text = "暂不支持应用内注册",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
