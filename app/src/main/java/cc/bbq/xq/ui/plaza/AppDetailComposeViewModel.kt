@@ -70,25 +70,12 @@ class AppDetailComposeViewModel(
     private val _openUrlEvent = MutableSharedFlow<String>()
     val openUrlEvent: SharedFlow<String> = _openUrlEvent.asSharedFlow()
 
-    // 移除：版本列表相关状态
-    //private val _versions = MutableStateFlow<List<UnifiedAppItem>>(emptyList())
-    //val versions: StateFlow<List<UnifiedAppItem>> = _versions.asStateFlow()
-
-    //private val _isVersionListLoading = MutableStateFlow(false)
-    //val isVersionListLoading: StateFlow<Boolean> = _isVersionListLoading.asStateFlow()
-
-    //private val _versionListError = MutableStateFlow<String?>(null)
-    //val versionListError: StateFlow<String?> = _versionListError.asStateFlow()
-
     private val _currentTab = MutableStateFlow(0) // 0: 详情, 1: 版本列表
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
     
     // 分享链接
     private val _shareLink = MutableStateFlow<String?>(null)
     val shareLink: StateFlow<String?> = _shareLink.asStateFlow()
-
-    //private val _showVersionList = MutableStateFlow(false)
-    //val showVersionList: StateFlow<Boolean> = _showVersionList.asStateFlow()
 
     private val repository: IAppStoreRepository
         get() = repositories[currentStore] ?: throw IllegalStateException("Repository not found")
@@ -102,52 +89,18 @@ class AppDetailComposeViewModel(
     val updateEvent: SharedFlow<String> = _updateEvent.asSharedFlow()
     
     // 支付相关状态和方法
-private val _navigateToPaymentEvent = MutableSharedFlow<PaymentInfo>()
-val navigateToPaymentEvent: SharedFlow<PaymentInfo> = _navigateToPaymentEvent.asSharedFlow()
+    private val _navigateToPaymentEvent = MutableSharedFlow<PaymentInfo>()
+    val navigateToPaymentEvent: SharedFlow<PaymentInfo> = _navigateToPaymentEvent.asSharedFlow()
 
-// 支付信息数据类
-data class PaymentInfo(
-    val appId: Long,
-    val appName: String,
-    val versionId: Long,
-    val price: Int,
-    val iconUrl: String,
-    val previewContent: String
-)
-
-// 检查是否需要购买
-fun checkPurchaseNeeded(): PaymentInfo? {
-    val detail = _appDetail.value ?: return null
-    
-    // 仅小趣空间应用需要检查购买状态
-    if (detail.store == AppStore.XIAOQU_SPACE) {
-        val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
-        if (raw != null && raw.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true) {
-            return PaymentInfo(
-                appId = raw.id,
-                appName = raw.appname,
-                versionId = raw.apps_version_id,
-                price = raw.pay_money,
-                iconUrl = raw.app_icon,
-                previewContent = raw.app_introduce?.take(30) ?: ""
-            )
-        }
-    }
-    return null
-}
-
-// 触发购买导航
-fun triggerPurchase() {
-    viewModelScope.launch {
-        val paymentInfo = checkPurchaseNeeded()
-        if (paymentInfo != null) {
-            _navigateToPaymentEvent.emit(paymentInfo)
-        } else {
-            // 如果不需要购买，直接处理下载
-            handleDownloadClick()
-        }
-    }
-}
+    // 支付信息数据类
+    data class PaymentInfo(
+        val appId: Long,
+        val appName: String,
+        val versionId: Long,
+        val price: Int,
+        val iconUrl: String,
+        val previewContent: String
+    )
 
     // 退款信息数据类
     data class RefundInfo(
@@ -254,32 +207,54 @@ fun triggerPurchase() {
         loadData()
     }
 
-    fun handleDownloadClick() {
-    viewModelScope.launch {
-        val paymentInfo = checkPurchaseNeeded()
-        if (paymentInfo != null) {
-            // 需要购买，触发支付事件
-            _navigateToPaymentEvent.emit(paymentInfo)
-        } else {
-            // 不需要购买，继续原有下载逻辑
-            _isLoading.value = true
-            val result = repository.getAppDownloadSources(currentAppId, currentVersionId)
-            _isLoading.value = false
+    // 检查是否需要购买
+    fun checkPurchaseNeeded(): PaymentInfo? {
+        val detail = _appDetail.value ?: return null
+        
+        // 仅小趣空间应用需要检查购买状态
+        if (detail.store == AppStore.XIAOQU_SPACE) {
+            val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+            if (raw != null && raw.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true) {
+                return PaymentInfo(
+                    appId = raw.id,
+                    appName = raw.appname,
+                    versionId = raw.apps_version_id,
+                    price = raw.pay_money,
+                    iconUrl = raw.app_icon,
+                    previewContent = raw.app_introduce?.take(30) ?: ""
+                )
+            }
+        }
+        return null
+    }
 
-            if (result.isSuccess) {
-                val sources = result.getOrThrow()
-                if (sources.isEmpty()) {
-                    _errorMessage.value = "未找到下载源"
-                } else if (sources.size == 1) {
-                    // 只有一个源，直接触发下载
-                    startDownload(sources.first().url)
-                } else {
-                    // 多个源，显示抽屉
-                    _downloadSources.value = sources
-                    _showDownloadDrawer.value = true
-                }
+    fun handleDownloadClick() {
+        viewModelScope.launch {
+            val paymentInfo = checkPurchaseNeeded()
+            if (paymentInfo != null) {
+                // 需要购买，触发支付事件
+                _navigateToPaymentEvent.emit(paymentInfo)
             } else {
-                _errorMessage.value = "获取下载链接失败: ${result.exceptionOrNull()?.message}"
+                // 不需要购买，继续原有下载逻辑
+                _isLoading.value = true
+                val result = repository.getAppDownloadSources(currentAppId, currentVersionId)
+                _isLoading.value = false
+
+                if (result.isSuccess) {
+                    val sources = result.getOrThrow()
+                    if (sources.isEmpty()) {
+                        _errorMessage.value = "未找到下载源"
+                    } else if (sources.size == 1) {
+                        // 只有一个源，直接触发下载
+                        startDownload(sources.first().url)
+                    } else {
+                        // 多个源，显示抽屉
+                        _downloadSources.value = sources
+                        _showDownloadDrawer.value = true
+                    }
+                } else {
+                    _errorMessage.value = "获取下载链接失败: ${result.exceptionOrNull()?.message}"
+                }
             }
         }
     }
@@ -332,9 +307,6 @@ fun triggerPurchase() {
             }
         }
     }
-
-    // 移除：加载版本列表
-    //private fun loadVersionList() { ... }
 
     fun openCommentDialog() {
         _showCommentDialog.value = true
