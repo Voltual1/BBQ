@@ -54,6 +54,7 @@ data class HomeUiState(
     // 签到相关状态
     val seriesDays: Int = 0,
     val signStatusMessage: String? = null,
+    val lastSignTime: String = "", // 添加上次签到时间
     val createTime: String = "",
     val exp: Int = 0, // 添加经验值属性
     val lastSignTime: String = "",
@@ -129,6 +130,7 @@ class HomeViewModel : ViewModel() {
                             fansCount = userData.fanscount.toString(),
                             postsCount = userData.postcount.toString(),
                             likesCount = userData.likecount.toString(),
+                            lastSignTime = userData.signlasttime, // 更新上次签到时间
                             seriesDays = userData.series_days,
                             createTime = userData.create_time,
                             lastSignTime = userData.signlasttime,
@@ -217,62 +219,64 @@ class HomeViewModel : ViewModel() {
 
     // 签到功能
     fun signIn(context: Context) {
-        // 将实际的签到逻辑移到一个协程中
-        viewModelScope.launch {
-            val userCredentialsFlow = AuthManager.getCredentials(context)
-            val userCredentials = userCredentialsFlow.first()
-            val token = userCredentials?.token ?: ""
+    viewModelScope.launch {
+        val userCredentialsFlow = AuthManager.getCredentials(context)
+        val userCredentials = userCredentialsFlow.first()
+        val token = userCredentials?.token ?: ""
 
-            
-            try {
-                uiState.value = uiState.value.copy(isLoading = true)
+        try {
+            uiState.value = uiState.value.copy(isLoading = true)
 
-                // 使用 KtorClient 发起网络请求
-                val response = withContext(Dispatchers.IO) {
-                    //RetrofitClient.instance.userSignIn(token = token)
-                    KtorClient.ApiServiceImpl.userSignIn(token = token)
-                }
+            val response = withContext(Dispatchers.IO) {
+                KtorClient.ApiServiceImpl.userSignIn(token = token)
+            }
 
-                response.onSuccess { result ->
-                    // 处理服务器返回的401错误
-                    if (result.code == 401) {
-                        uiState.value = uiState.value.copy(
-                            signStatusMessage = "登录已过期，请长按头像刷新",
-                            showLoginPrompt = true,
-                            isLoading = false
-                        )
-                        // 重置加载状态，因为登录已过期
-                        resetLoadState()
-                    } else {
-                        // 正常处理成功响应
-                        uiState.value = uiState.value.copy(
-                            signStatusMessage = result.msg,
-                            isLoading = false
-                        )
-
-                        // 2秒后清除状态消息
-                        launch {
-                            delay(2000)
-                            uiState.value = uiState.value.copy(signStatusMessage = null)
-                        }
-
-                        // 重新加载用户数据（强制刷新）
-                        refreshUserData(context)
-                    }
-                }.onFailure { _ ->
+            response.onSuccess { result ->
+                if (result.code == 401) {
                     uiState.value = uiState.value.copy(
-                        signStatusMessage = "签到失败: 网络请求错误",
+                        signStatusMessage = "登录已过期，请长按头像刷新",
+                        showLoginPrompt = true,
                         isLoading = false
                     )
+                    resetLoadState()
+                } else {
+                    // 成功签到后，更新状态
+                    uiState.value = uiState.value.copy(
+                        signStatusMessage = result.msg,
+                        isLoading = false,
+                        lastSignTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                            .format(Date()) // 更新为当前时间
+                    )
+
+                    // 2秒后清除状态消息
+                    launch {
+                        delay(2000)
+                        uiState.value = uiState.value.copy(signStatusMessage = null)
+                    }
+
+                    // 重新加载用户数据（强制刷新）
+                    refreshUserData(context)
                 }
-            } catch (e: Exception) {
+            }.onFailure { _ ->
                 uiState.value = uiState.value.copy(
-                    signStatusMessage = "网络错误: ${e.message}",
+                    signStatusMessage = "签到失败: 网络请求错误",
                     isLoading = false
                 )
             }
+        } catch (e: Exception) {
+            uiState.value = uiState.value.copy(
+                signStatusMessage = "网络错误: ${e.message}",
+                isLoading = false
+            )
         }
     }
+}
+
+// 添加一个获取签到按钮状态的方法
+fun getSignButtonState(): Pair<String, Boolean> {
+    val currentState = uiState.value
+    return getSignStatusInfo(currentState.lastSignTime, currentState.seriesDays)
+}
 
     // 计算两个日期之间的天数差
     fun calculateDaysDiff(startDate: String, endDate: String): Int {
@@ -294,6 +298,35 @@ class HomeViewModel : ViewModel() {
         val daysDiff = calculateDaysDiff(uiState.value.createTime, currentTime)
         uiState.value = uiState.value.copy(displayDaysDiff = daysDiff)
     }
+    
+    // 检查是否可以签到（上次签到时间与当前时间是否同一天）
+private fun canSignIn(lastSignTime: String): Boolean {
+    return try {
+        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val lastSignDate = format.parse(lastSignTime) ?: return true // 如果解析失败，允许签到
+        
+        val calendarLast = Calendar.getInstance().apply { time = lastSignDate }
+        val calendarNow = Calendar.getInstance()
+        
+        // 比较年、月、日
+        calendarLast.get(Calendar.YEAR) != calendarNow.get(Calendar.YEAR) ||
+        calendarLast.get(Calendar.MONTH) != calendarNow.get(Calendar.MONTH) ||
+        calendarLast.get(Calendar.DAY_OF_MONTH) != calendarNow.get(Calendar.DAY_OF_MONTH)
+    } catch (e: Exception) {
+        true // 出错时允许签到
+    }
+}
+
+// 获取签到状态信息
+private fun getSignStatusInfo(lastSignTime: String, seriesDays: Int): Pair<String, Boolean> {
+    return if (lastSignTime.isBlank()) {
+        "立即签到" to true
+    } else if (canSignIn(lastSignTime)) {
+        "立即签到" to true
+    } else {
+        "今日已签到" to false
+    }
+}
 
     fun toggleDarkMode() {
         ThemeManager.toggleTheme()
