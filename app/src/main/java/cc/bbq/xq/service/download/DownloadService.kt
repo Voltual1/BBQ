@@ -156,7 +156,7 @@ class DownloadService : Service() {
             downloader.startDownload(config)
         }
         // 更新通知显示下载开始
-        updateNotification(DownloadStatus.Pending, fileName)
+//        updateNotification(DownloadStatus.Pending, fileName)
     }
 
     /**
@@ -183,7 +183,7 @@ class DownloadService : Service() {
             .onEach { status ->
                 Log.d(TAG, "Download status changed: $status")
                 val fileName = currentDownloadConfig?.fileName ?: "文件"
-                updateNotification(status, fileName)
+//                updateNotification(status, fileName)
 
                 // 将下载状态更新到数据库
                 currentDownloadConfig?.let { config ->
@@ -248,9 +248,9 @@ class DownloadService : Service() {
         }
     }
 
-    /**
-     * 创建通知渠道（Android O+）
-     */
+    /*
+     // 创建通知渠道（Android O+）
+     
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -264,10 +264,11 @@ class DownloadService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
     }
+    */
 
-    /**
-     * 更新通知
-     */
+    /*
+     // 更新通知
+
     private fun updateNotification(status: DownloadStatus, fileName: String) {
         val notification = buildNotification(status, fileName)
         when (status) {
@@ -290,9 +291,9 @@ class DownloadService : Service() {
         }
     }
 
-    /**
-     * 构建通知
-     */
+
+     // 构建通知
+
     private fun buildNotification(status: DownloadStatus, fileName: String): Notification {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -368,6 +369,7 @@ class DownloadService : Service() {
         }
         return builder.build()
     }
+    */
 
     /**
      * 格式化文件大小
