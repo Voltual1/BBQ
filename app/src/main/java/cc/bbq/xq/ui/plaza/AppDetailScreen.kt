@@ -243,6 +243,7 @@ fun AppDetailScreen(
         BBQSnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
     }
 
+
     // 删除应用确认对话框
     if (showDeleteAppDialog) {
         AlertDialog(
