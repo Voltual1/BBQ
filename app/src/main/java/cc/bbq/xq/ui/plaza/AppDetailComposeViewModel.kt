@@ -192,7 +192,7 @@ fun requestUpdate() {
             _snackbarEvent.tryEmit("该商店不支持更新功能")
         }
     }
-
+}
     
     // 分享链接
     fun generateShareLink(): String? {
