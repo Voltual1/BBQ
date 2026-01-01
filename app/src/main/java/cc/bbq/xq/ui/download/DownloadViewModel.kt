@@ -101,14 +101,21 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         _downloadStatus.value = DownloadStatus.Idle
     }
 
-    /**
-     * 删除下载任务
-     */
-    fun deleteDownloadTask(task: cc.bbq.xq.service.download.DownloadTask) {
-        viewModelScope.launch {
+/**
+ * 删除下载任务（从数据库和UI中移除）
+ */
+fun deleteTask(task: DownloadTask, context: Context) {
+    viewModelScope.launch {
+        try {
+            // 从数据库删除任务
             downloadTaskDao.delete(task)
+            Log.d(TAG, "Download task deleted: ${task.fileName}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to delete download task", e)
+            // 可以在这里添加错误提示
         }
     }
+}
 
     override fun onCleared() {
         super.onCleared()

@@ -35,9 +35,11 @@ import cc.bbq.xq.ui.theme.AppShapes
 import cc.bbq.xq.ui.theme.BBQButton
 import cc.bbq.xq.ui.theme.BBQCard
 import cc.bbq.xq.ui.theme.BBQIconButton
-// 关键：导入 FileActionUtil
 import cc.bbq.xq.util.FileActionUtil
-import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.OpenInBrowser
+import kotlinx.coroutines.launch
 
 @Composable
 fun DownloadScreen(
@@ -60,7 +62,7 @@ fun DownloadScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 如果没有下载任务，则显示下载状态
+            // 如果没有下载任务，则显示当前下载状态
             if (downloadTasks.isEmpty()) {
                 AnimatedContent(targetState = status, label = "DownloadStatus") { currentStatus ->
                     when (currentStatus) {
@@ -71,15 +73,30 @@ fun DownloadScreen(
                             onCancel = { viewModel.cancelDownload() }
                         )
                         is DownloadStatus.Paused -> PausedState(currentStatus)
-                        is DownloadStatus.Success -> SuccessState(currentStatus, viewModel = viewModel)
+                        is DownloadStatus.Success -> SuccessState(currentStatus)
                         is DownloadStatus.Error -> ErrorState(currentStatus)
                     }
                 }
             } else {
                 // 如果有下载任务，则显示下载任务列表
-                LazyColumn {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     items(downloadTasks) { task ->
-                        DownloadTaskItem(task = task, viewModel = viewModel)
+                        DownloadTaskItem(
+                            task = task,
+                            viewModel = viewModel,
+                            onDeleteTask = { viewModel.deleteTask(task, context) },
+                            onOpenInBrowser = { url ->
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    // 处理浏览器打开失败的情况
+                                    e.printStackTrace()
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -90,7 +107,9 @@ fun DownloadScreen(
 @Composable
 fun DownloadTaskItem(
     task: DownloadTask,
-    viewModel: DownloadViewModel
+    viewModel: DownloadViewModel,
+    onDeleteTask: () -> Unit,
+    onOpenInBrowser: (String) -> Unit
 ) {
     val context = LocalContext.current
     val status = when (task.status) {
@@ -110,7 +129,7 @@ fun DownloadTaskItem(
             val file = java.io.File(task.savePath, task.fileName)
             DownloadStatus.Success(file = file)
         }
-        DownloadStatus.Error::class.java.simpleName -> DownloadStatus.Error(message = "未知错误")
+        DownloadStatus.Error::class.java.simpleName -> DownloadStatus.Error(message = "下载失败，点击浏览链接手动下载")
         else -> DownloadStatus.Idle
     }
 
@@ -122,8 +141,18 @@ fun DownloadTaskItem(
             onCancel = { viewModel.cancelDownload() }
         )
         is DownloadStatus.Paused -> PausedState(status)
-        is DownloadStatus.Success -> SuccessState(status, viewModel = viewModel)
-        is DownloadStatus.Error -> ErrorState(status)
+        is DownloadStatus.Success -> SuccessTaskState(
+            status = status,
+            task = task,
+            onDeleteTask = onDeleteTask,
+            onOpenInBrowser = { onOpenInBrowser(task.url) }
+        )
+        is DownloadStatus.Error -> ErrorTaskState(
+            status = status,
+            task = task,
+            onDeleteTask = onDeleteTask,
+            onOpenInBrowser = { onOpenInBrowser(task.url) }
+        )
     }
 }
 
@@ -209,7 +238,7 @@ fun DownloadingState(
                 progress = { status.progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(8.d)
                     .clip(AppShapes.small),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -260,10 +289,8 @@ fun PausedState(status: DownloadStatus.Paused) {
 }
 
 @Composable
-fun SuccessState(status: DownloadStatus.Success, viewModel: DownloadViewModel) {
+fun SuccessState(status: DownloadStatus.Success) {
     val context = LocalContext.current
-    // 获取 DownloadTask
-    val downloadTask = viewModel.getDownloadTaskByUrl(status.file.toURI().toString()) // 需要一个URL
     BBQCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -302,25 +329,102 @@ fun SuccessState(status: DownloadStatus.Success, viewModel: DownloadViewModel) {
                     },
                     text = { Text("查看文件") }
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                BBQButton(
-                    onClick = {
-                        // 浏览链接
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadTask?.url ?: ""))
-                        context.startActivity(intent)
-                    },
-                    text = { Text("浏览链接") }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                BBQButton(
-    onClick = {
-        // 删除任务
-        downloadTask?.let { viewModel.deleteDownloadTask(it) }
-    },
-    text = { Text("删除任务") }
-)
             }
         }
+    }
+}
+
+@Composable
+fun SuccessTaskState(
+    status: DownloadStatus.Success,
+    task: DownloadTask,
+    onDeleteTask: () -> Unit,
+    onOpenInBrowser: () -> Unit
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    BBQCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "下载完成",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = task.fileName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                BBQIconButton(
+                    onClick = { showDeleteDialog = true },
+                    icon = Icons.Outlined.Delete,
+                    contentDescription = "删除任务",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BBQButton(
+                    onClick = onOpenInBrowser,
+                    text = { Text("浏览链接") },
+                    modifier = Modifier.weight(1f)
+                )
+                BBQButton(
+                    onClick = {
+                        FileActionUtil.openFile(context, status.file)
+                    },
+                    text = { Text("查看文件") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+
+    // 删除确认对话框
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("删除下载任务") },
+            text = { Text("确定要删除这个下载任务记录吗？文件不会被删除。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteTask()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
 
@@ -352,6 +456,104 @@ fun ErrorState(status: DownloadStatus.Error) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ErrorTaskState(
+    status: DownloadStatus.Error,
+    task: DownloadTask,
+    onDeleteTask: () -> Unit,
+    onOpenInBrowser: () -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    BBQCard(
+        modifier = Modifier.fillMaxWidth(),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Error,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "下载失败",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        text = task.fileName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = status.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                BBQIconButton(
+                    onClick = { showDeleteDialog = true },
+                    icon = Icons.Outlined.Delete,
+                    contentDescription = "删除任务",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BBQButton(
+                    onClick = onOpenInBrowser,
+                    text = { Text("浏览链接") },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
+                BBQButton(
+                    onClick = {
+                        // 可以在这里添加重试逻辑
+                    },
+                    text = { Text("重试") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+
+    // 删除确认对话框
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("删除下载任务") },
+            text = { Text("确定要删除这个下载任务记录吗？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteTask()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
 
