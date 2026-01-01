@@ -42,6 +42,7 @@ import cc.bbq.xq.data.unified.UnifiedAppDetail
 import cc.bbq.xq.data.unified.UnifiedComment
 import cc.bbq.xq.ui.ImagePreview
 import cc.bbq.xq.ui.UserDetail
+import cc.bbq.xq.ui.PaymentForApp
 import cc.bbq.xq.ui.community.compose.CommentDialog
 import cc.bbq.xq.ui.CreateRefundPost
 import cc.bbq.xq.ui.UpdateAppRelease
