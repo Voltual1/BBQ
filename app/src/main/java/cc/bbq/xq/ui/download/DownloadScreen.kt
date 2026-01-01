@@ -238,7 +238,7 @@ fun DownloadingState(
                 progress = { status.progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.d)
+                    .height(8.dp)  // 修复：从 .d 改为 .dp
                     .clip(AppShapes.small),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -478,9 +478,7 @@ fun ErrorTaskState(
                 Icon(
                     imageVector = Icons.Default.Error,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
-                )
-                Spacer(modifier = Modifier.width(16.dp))
+16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "下载失败",
@@ -492,17 +490,7 @@ fun ErrorTaskState(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = status.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-                BBQIconButton(
-                    onClick = { showDeleteDialog = true },
-                    icon = Icons.Outlined.Delete,
+                        overflow = TextOverflow.Ell = Icons.Outlined.Delete,
                     contentDescription = "删除任务",
                     tint = MaterialTheme.colorScheme.error
                 )
@@ -512,14 +500,11 @@ fun ErrorTaskState(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // 修复：移除 colors 参数
                 BBQButton(
                     onClick = onOpenInBrowser,
                     text = { Text("浏览链接") },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    modifier = Modifier.weight(1f)
                 )
                 BBQButton(
                     onClick = {
