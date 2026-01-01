@@ -39,8 +39,6 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 // 关键：导入 FileActionUtil
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
-import androidx.compose.ui.graphics.vector.ImageVector
-import kotlinx.coroutines.launch
 
 private const val TAG = "DownloadScreen"
 
@@ -75,7 +73,7 @@ fun DownloadScreen(
                             onCancel = { viewModel.cancelDownload() }
                         )
                         is DownloadStatus.Paused -> PausedState(currentStatus)
-                        is DownloadStatus.Success -> SuccessState(currentStatus)
+                        is DownloadStatus.Success -> SuccessState(currentStatus, viewModel, task = DownloadTask(url = "", fileName = "", savePath = "", totalBytes = 0, downloadedBytes = 0, status = "", progress = 0f))
                         is DownloadStatus.Error -> ErrorState(currentStatus)
                     }
                 }
@@ -134,7 +132,7 @@ fun DownloadTaskItem(
             onCancel = { viewModel.cancelDownload() }
         )
         is DownloadStatus.Paused -> PausedState(status)
-        is DownloadStatus.Success -> SuccessState(status, viewModel, task)
+        is DownloadStatus.Success -> SuccessState(status, viewModel, task = task)
         is DownloadStatus.Error -> ErrorState(status)
     }
 }
@@ -338,7 +336,7 @@ fun SuccessState(
                         scope.launch {
                             try {
                                 // 从数据库中删除任务
-                                //  viewModel.deleteDownloadTask(task)
+                                viewModel.deleteDownloadTask(task)
                                 // 尝试删除文件
                                 val deleted = status.file.delete()
                                 if (deleted) {
@@ -354,7 +352,7 @@ fun SuccessState(
                         }
                     },
                     text = { Text("删除任务") },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    containerColor = MaterialTheme.colorScheme.error // 使用 containerColor 设置背景色
                 )
             }
         }
