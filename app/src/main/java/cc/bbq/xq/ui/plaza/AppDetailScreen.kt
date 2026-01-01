@@ -132,6 +132,22 @@ fun AppDetailScreen(
         }
     }
     
+    // 监听支付导航事件
+    LaunchedEffect(Unit) {
+        viewModel.navigateToPaymentEvent.collectLatest { paymentInfo ->
+            navController.navigate(
+                PaymentForApp(
+                    appId = paymentInfo.appId,
+                    appName = paymentInfo.appName,
+                    versionId = paymentInfo.versionId,
+                    price = paymentInfo.price,
+                    iconUrl = paymentInfo.iconUrl,
+                    previewContent = paymentInfo.previewContent
+                ).createRoute()
+            )
+        }
+    }
+    
     // 监听 ViewModel 中的 navigateToDownloadEvent
     LaunchedEffect(viewModel.navigateToDownloadEvent) {
         viewModel.navigateToDownloadEvent.collectLatest { navigate ->
@@ -492,30 +508,25 @@ var showMoreMenu by remember { mutableStateOf(false) }
                     }
                     
                     Button(
-                        onClick = onDownloadClick,
-                        modifier = Modifier.fillMaxWidth(),
-                        // 如果是付费应用且未购买，跳转到购买页面
-                        enabled = if (raw?.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true) {
-                            // 这里应该跳转到购买页面，但为了简化，我们先允许下载
-                            // 实际应用中，这里应该检查购买状态
-                            true
-                        } else {
-                            true
+                    onClick = onDownloadClick,  // 这里会触发购买检查
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = true  // 总是启用，ViewModel会处理购买逻辑
+                ) {
+                    Icon(Icons.Filled.Download, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        when {
+                            raw?.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true -> 
+                                "购买并下载 (${raw.pay_money}硬币)"
+                            raw?.is_pay == 1 && raw.is_user_pay == true -> 
+                                "下载应用 (已购买)"
+                            else -> "下载应用"
                         }
-                    ) {
-                        Icon(Icons.Filled.Download, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            when {
-                                raw?.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true -> "购买并下载 (${raw.pay_money}硬币)"
-                                raw?.is_pay == 1 && raw.is_user_pay == true -> "下载应用 (已购买)"
-                                else -> "下载应用"
-                            }
-                        )
-                    }
+                    )
                 }
             }
         }
+    }
         
         // --- 更新日志（弦应用商店） ---
         if (appDetail.store == AppStore.SIENE_SHOP && !appDetail.updateLog.isNullOrEmpty()) {

@@ -100,6 +100,54 @@ class AppDetailComposeViewModel(
     // 更新事件
     private val _updateEvent = MutableSharedFlow<String>()
     val updateEvent: SharedFlow<String> = _updateEvent.asSharedFlow()
+    
+    // 支付相关状态和方法
+private val _navigateToPaymentEvent = MutableSharedFlow<PaymentInfo>()
+val navigateToPaymentEvent: SharedFlow<PaymentInfo> = _navigateToPaymentEvent.asSharedFlow()
+
+// 支付信息数据类
+data class PaymentInfo(
+    val appId: Long,
+    val appName: String,
+    val versionId: Long,
+    val price: Int,
+    val iconUrl: String,
+    val previewContent: String
+)
+
+// 检查是否需要购买
+fun checkPurchaseNeeded(): PaymentInfo? {
+    val detail = _appDetail.value ?: return null
+    
+    // 仅小趣空间应用需要检查购买状态
+    if (detail.store == AppStore.XIAOQU_SPACE) {
+        val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+        if (raw != null && raw.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true) {
+            return PaymentInfo(
+                appId = raw.id,
+                appName = raw.appname,
+                versionId = raw.apps_version_id,
+                price = raw.pay_money,
+                iconUrl = raw.app_icon,
+                previewContent = raw.app_introduce?.take(30) ?: ""
+            )
+        }
+    }
+    return null
+}
+
+// 触发购买导航
+fun triggerPurchase() {
+    viewModelScope.launch {
+        val paymentInfo = checkPurchaseNeeded()
+        if (paymentInfo != null) {
+            _navigateToPaymentEvent.emit(paymentInfo)
+        } else {
+            // 如果不需要购买，直接处理下载
+            handleDownloadClick()
+        }
+    }
+}
 
     // 退款信息数据类
     data class RefundInfo(
@@ -207,7 +255,13 @@ class AppDetailComposeViewModel(
     }
 
     fun handleDownloadClick() {
-        viewModelScope.launch {
+    viewModelScope.launch {
+        val paymentInfo = checkPurchaseNeeded()
+        if (paymentInfo != null) {
+            // 需要购买，触发支付事件
+            _navigateToPaymentEvent.emit(paymentInfo)
+        } else {
+            // 不需要购买，继续原有下载逻辑
             _isLoading.value = true
             val result = repository.getAppDownloadSources(currentAppId, currentVersionId)
             _isLoading.value = false
