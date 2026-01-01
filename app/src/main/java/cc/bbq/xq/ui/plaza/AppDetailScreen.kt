@@ -335,6 +335,7 @@ fun AppDetailContent(
     onMoreMenuClick: () -> Unit,
     onImagePreview: (String) -> Unit
 ) {
+var showMoreMenu by remember { mutableStateOf(false) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
