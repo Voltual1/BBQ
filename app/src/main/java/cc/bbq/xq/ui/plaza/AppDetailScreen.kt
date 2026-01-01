@@ -84,7 +84,6 @@ fun AppDetailScreen(
 
     // 应用删除确认对话框
     var showDeleteAppDialog by remember { mutableStateOf(false) }
-    var showMoreMenu by remember { mutableStateOf(false) }
 
     // 评论删除确认对话框
     var showDeleteCommentDialog by remember { mutableStateOf(false) }
@@ -244,56 +243,6 @@ fun AppDetailScreen(
         BBQSnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
     }
 
-    // 更多菜单
-    if (showMoreMenu) {
-        DropdownMenu(
-            expanded = showMoreMenu,
-            onDismissRequest = { showMoreMenu = false },
-            modifier = Modifier.width(200.dp)
-        ) {
-            // 分享选项
-            DropdownMenuItem(
-                text = { Text("分享应用") },
-                onClick = {
-                    showMoreMenu = false
-                    handleShare()
-                },
-                leadingIcon = {
-                    Icon(Icons.Default.Share, contentDescription = null)
-                }
-            )
-            
-            // 根据商店类型显示不同选项
-            appDetail?.let { detail ->
-                when (detail.store) {
-                    AppStore.XIAOQU_SPACE -> {
-                        // 小趣空间：显示删除选项
-                        DropdownMenuItem(
-                            text = { Text("删除应用") },
-                            onClick = {
-                                showMoreMenu = false
-                                showDeleteAppDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Delete, contentDescription = null)
-                            }
-                        )
-                    }
-                    AppStore.SIENE_SHOP -> {
-                        // 弦应用商店：暂不显示删除（因为服务端不支持）
-                        // 可以在这里添加弦应用商店特有的选项
-                    }
-                    AppStore.SINE_OPEN_MARKET -> {
-                        // 弦开放市场：无特殊选项
-                    }
-                    AppStore.LOCAL -> {
-                        // 本地商店：无特殊选项
-                    }
-                }
-            }
-        }
-    }
-
     // 删除应用确认对话框
     if (showDeleteAppDialog) {
         AlertDialog(
@@ -384,6 +333,7 @@ fun AppDetailContent(
     onMoreMenuClick: () -> Unit,
     onImagePreview: (String) -> Unit
 ) {
+var showMoreMenu by remember { mutableStateOf(false) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -411,10 +361,59 @@ fun AppDetailContent(
                             Text("大小: ${appDetail.size ?: "未知"}", style = MaterialTheme.typography.bodyMedium)
                         }
                         
-                        // 更多菜单按钮
-                        IconButton(onClick = onMoreMenuClick) {
-                            Icon(Icons.Default.MoreVert, "更多")
+                        Box {
+                            IconButton(
+                                onClick = { showMoreMenu = true }
+                            ) {
+                                Icon(Icons.Default.MoreVert, "更多")
+                            }
+                            
+                            // 下拉菜单直接与按钮关联
+                            DropdownMenu(
+                                expanded = showMoreMenu,
+                                onDismissRequest = { showMoreMenu = false },
+                                modifier = Modifier.width(180.dp)
+                            ) {
+                                // 分享选项
+                                DropdownMenuItem(
+                                    text = { Text("分享应用") },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        onShareClick()
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Share, contentDescription = null)
+                                    }
+                                )
+                                
+                                // 根据商店类型显示不同选项
+                                when (appDetail.store) {
+                                    AppStore.XIAOQU_SPACE -> {
+                                        // 小趣空间：显示删除选项
+                                        DropdownMenuItem(
+                                            text = { Text("删除应用") },
+                                            onClick = {
+                                                showMoreMenu = false
+                                                onDeleteAppClick()
+                                            },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.Delete, contentDescription = null)
+                                            }
+                                        )
+                                    }
+                                    AppStore.SIENE_SHOP -> {
+                                        // 弦应用商店：暂不显示删除（因为服务端不支持）
+                                        }
+                                    AppStore.SINE_OPEN_MARKET -> {
+                                        // 弦开放市场：无特殊选项
+                                    }
+                                    AppStore.LOCAL -> {
+                                        // 本地商店：无特殊选项
+                                    }
+                                }
+                            }
                         }
+                    }
                     }
                     Spacer(Modifier.height(16.dp))
                     Button(
@@ -514,7 +513,7 @@ fun AppDetailContent(
                             
                             // 支持系统信息（包含最低SDK、目标SDK和设备兼容性）
                             val supportSystem = buildString {
-                                append("Android ${raw?.app_sdk_min ?: "未知"}")
+                                append("最低SDK: ${raw?.app_sdk_min ?: "未知"}")
                                 if (raw?.app_sdk_target != null && raw.app_sdk_target != raw.app_sdk_min) {
                                     append(" (目标SDK: ${raw.app_sdk_target})")
                                 }
@@ -849,7 +848,7 @@ fun getDeviceInfo(minSdk: Int?): String {
     val deviceSdk = android.os.Build.VERSION.SDK_INT
     
     return buildString {
-        append("设备:  $deviceSdk")
+        append("当前设备SDK:  $deviceSdk")
         if (minSdk != null && deviceSdk >= minSdk) {
             append(" • 兼容")
         } else {
