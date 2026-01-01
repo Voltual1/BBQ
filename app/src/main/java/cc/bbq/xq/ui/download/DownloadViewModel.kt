@@ -11,7 +11,6 @@ import androidx.lifecycle.viewModelScope
 import cc.bbq.xq.data.db.AppDatabase
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
-import cc.bbq.xq.service.download.DownloadTask
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
@@ -22,8 +21,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
 
     // 添加一个 StateFlow 来存储从数据库获取的所有下载任务
-    private val _downloadTasks = MutableStateFlow<List<DownloadTask>>(emptyList())
-    val downloadTasks: StateFlow<List<DownloadTask>> = _downloadTasks.asStateFlow()
+    private val _downloadTasks = MutableStateFlow<List<cc.bbq.xq.service.download.DownloadTask>>(emptyList())
+    val downloadTasks: StateFlow<List<cc.bbq.xq.service.download.DownloadTask>> = _downloadTasks.asStateFlow()
 
     private var downloadService: DownloadService? = null
     private var isBound = false
@@ -87,7 +86,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     /**
      * 根据 URL 获取特定的下载任务
      */
-    fun getDownloadTaskByUrl(url: String): DownloadTask? {
+    fun getDownloadTaskByUrl(url: String): cc.bbq.xq.service.download.DownloadTask? {
         return _downloadTasks.value.find { it.url == url }
     }
 
@@ -103,9 +102,9 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * 从数据库删除下载任务
+     * 删除下载任务
      */
-    fun deleteDownloadTask(task: DownloadTask) {
+    fun deleteDownloadTask(task: cc.bbq.xq.service.download.DownloadTask) {
         viewModelScope.launch {
             downloadTaskDao.delete(task)
         }

@@ -12,7 +12,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.text.format.Formatter
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -40,8 +39,6 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
 
-private const val TAG = "DownloadScreen"
-
 @Composable
 fun DownloadScreen(
     modifier: Modifier = Modifier,
@@ -50,6 +47,7 @@ fun DownloadScreen(
     val status by viewModel.downloadStatus.collectAsState()
     // 从 ViewModel 获取所有下载任务
     val downloadTasks by viewModel.downloadTasks.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -62,7 +60,7 @@ fun DownloadScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 如果没有下载任务，则显示当前下载状态
+            // 如果没有下载任务，则显示下载状态
             if (downloadTasks.isEmpty()) {
                 AnimatedContent(targetState = status, label = "DownloadStatus") { currentStatus ->
                     when (currentStatus) {
@@ -73,7 +71,7 @@ fun DownloadScreen(
                             onCancel = { viewModel.cancelDownload() }
                         )
                         is DownloadStatus.Paused -> PausedState(currentStatus)
-                        is DownloadStatus.Success -> SuccessState(currentStatus, viewModel, task = DownloadTask(url = "", fileName = "", savePath = "", totalBytes = 0, downloadedBytes = 0, status = "", progress = 0f))
+                        is DownloadStatus.Success -> SuccessState(currentStatus, viewModel = viewModel)
                         is DownloadStatus.Error -> ErrorState(currentStatus)
                     }
                 }
@@ -95,35 +93,27 @@ fun DownloadTaskItem(
     viewModel: DownloadViewModel
 ) {
     val context = LocalContext.current
-    val status = remember(task.status) {
-        when (task.status) {
-            DownloadStatus.Idle::class.java.simpleName -> DownloadStatus.Idle
-            DownloadStatus.Pending::class.java.simpleName -> DownloadStatus.Pending
-            DownloadStatus.Downloading::class.java.simpleName -> DownloadStatus.Downloading(
-                progress = task.progress,
-                downloadedBytes = task.downloadedBytes,
-                totalBytes = task.totalBytes,
-                speed = "" // 速度信息在数据库中没有存储，需要从服务中获取
-            )
-            DownloadStatus.Paused::class.java.simpleName -> DownloadStatus.Paused(
-                downloadedBytes = task.downloadedBytes,
-                totalBytes = task.totalBytes
-            )
-            DownloadStatus.Success::class.java.simpleName -> {
-                val file = java.io.File(task.savePath, task.fileName)
-                DownloadStatus.Success(file = file)
-            }
-            DownloadStatus.Error::class.java.simpleName -> DownloadStatus.Error(message = "未知错误")
-            else -> DownloadStatus.Idle
+    val status = when (task.status) {
+        DownloadStatus.Idle::class.java.simpleName -> DownloadStatus.Idle
+        DownloadStatus.Pending::class.java.simpleName -> DownloadStatus.Pending
+        DownloadStatus.Downloading::class.java.simpleName -> DownloadStatus.Downloading(
+            progress = task.progress,
+            downloadedBytes = task.downloadedBytes,
+            totalBytes = task.totalBytes,
+            speed = "" // 速度信息在数据库中没有存储，需要从服务中获取
+        )
+        DownloadStatus.Paused::class.java.simpleName -> DownloadStatus.Paused(
+            downloadedBytes = task.downloadedBytes,
+            totalBytes = task.totalBytes
+        )
+        DownloadStatus.Success::class.java.simpleName -> {
+            val file = java.io.File(task.savePath, task.fileName)
+            DownloadStatus.Success(file = file)
         }
+        DownloadStatus.Error::class.java.simpleName -> DownloadStatus.Error(message = "未知错误")
+        else -> DownloadStatus.Idle
     }
 
-    // 使用 LaunchedEffect 在状态变化时更新 UI
-    LaunchedEffect(status) {
-        Log.d(TAG, "DownloadTaskItem: Status changed to $status for task ${task.fileName}")
-    }
-
-    //UI
     when (status) {
         is DownloadStatus.Idle -> EmptyDownloadState()
         is DownloadStatus.Pending -> PendingDownloadState()
@@ -132,7 +122,7 @@ fun DownloadTaskItem(
             onCancel = { viewModel.cancelDownload() }
         )
         is DownloadStatus.Paused -> PausedState(status)
-        is DownloadStatus.Success -> SuccessState(status, viewModel, task = task)
+        is DownloadStatus.Success -> SuccessState(status, viewModel = viewModel)
         is DownloadStatus.Error -> ErrorState(status)
     }
 }
@@ -270,14 +260,10 @@ fun PausedState(status: DownloadStatus.Paused) {
 }
 
 @Composable
-fun SuccessState(
-    status: DownloadStatus.Success,
-    viewModel: DownloadViewModel,
-    task: DownloadTask
-) {
+fun SuccessState(status: DownloadStatus.Success, viewModel: DownloadViewModel) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
+    // 获取 DownloadTask
+    val downloadTask = viewModel.getDownloadTaskByUrl(status.file.toURI().toString()) // 需要一个URL
     BBQCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -308,11 +294,7 @@ fun SuccessState(
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 BBQButton(
                     onClick = {
                         // 使用 FileActionUtil 打开文件
@@ -323,37 +305,20 @@ fun SuccessState(
                 Spacer(modifier = Modifier.width(8.dp))
                 BBQButton(
                     onClick = {
-                        // 在浏览器中打开下载链接
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(task.url))
+                        // 浏览链接
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadTask?.url ?: ""))
                         context.startActivity(intent)
                     },
                     text = { Text("浏览链接") }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 BBQButton(
-                    onClick = {
-                        // 删除下载任务
-                        scope.launch {
-                            try {
-                                // 从数据库中删除任务
-                                viewModel.deleteDownloadTask(task)
-                                // 尝试删除文件
-                                val deleted = status.file.delete()
-                                if (deleted) {
-                                    Log.d(TAG, "File deleted successfully: ${status.file.absolutePath}")
-                                } else {
-                                    Log.w(TAG, "Failed to delete file: ${status.file.absolutePath}")
-                                    // 可以选择显示一个错误消息给用户
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error deleting file: ${status.file.absolutePath}", e)
-                                // 显示错误消息给用户
-                            }
-                        }
-                    },
-                    text = { Text("删除任务") },
-                    containerColor = MaterialTheme.colorScheme.error // 使用 containerColor 设置背景色
-                )
+    onClick = {
+        // 删除任务
+        downloadTask?.let { viewModel.deleteDownloadTask(it) }
+    },
+    text = { Text("删除任务") }
+)
             }
         }
     }
