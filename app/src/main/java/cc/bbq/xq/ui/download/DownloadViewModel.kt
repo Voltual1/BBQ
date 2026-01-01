@@ -8,14 +8,22 @@
 // 如果没有，请查阅 <http://www.gnu.org/licenses/>.
 package cc.bbq.xq.ui.download
 
-import android.viewModelScopeq.xq.data.db.AppDatabase
-import cc.bbq.xq.data.db.DownloadTask
+import android.app.Application
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import cc.bbq.xq.data.db.AppDatabase
+import cc.bbq.xq.data.db.DownloadTask // 导入 DownloadTask
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
-import android.util.Log
+import android.util.Log // 导入 Log
 
 @KoinViewModel
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {

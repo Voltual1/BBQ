@@ -30,7 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.bbq.xq.service.download.DownloadStatus
-import cc.bbq.xq.service.download.DownloadTask
+import cc.bbq.xq.data.db.DownloadTask // 导入 DownloadTask
 import cc.bbq.xq.ui.theme.AppShapes
 import cc.bbq.xq.ui.theme.BBQButton
 import cc.bbq.xq.ui.theme.BBQCard
@@ -82,7 +82,10 @@ fun DownloadScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(downloadTasks) { task ->
+                    items(
+                        items = downloadTasks, // 显式指定类型
+                        key = { it.url }
+                    ) { task ->
                         DownloadTaskItem(
                             task = task,
                             viewModel = viewModel,
@@ -238,7 +241,7 @@ fun DownloadingState(
                 progress = { status.progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)  // 修复：从 .d 改为 .dp
+                    .height(8.dp)
                     .clip(AppShapes.small),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -478,7 +481,9 @@ fun ErrorTaskState(
                 Icon(
                     imageVector = Icons.Default.Error,
                     contentDescription = null,
-16.dp))
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "下载失败",
@@ -490,7 +495,17 @@ fun ErrorTaskState(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         maxLines = 1,
-                        overflow = TextOverflow.Ell = Icons.Outlined.Delete,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = status.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                BBQIconButton(
+                    onClick = { showDeleteDialog = true },
+                    icon = Icons.Outlined.Delete,
                     contentDescription = "删除任务",
                     tint = MaterialTheme.colorScheme.error
                 )
@@ -500,7 +515,6 @@ fun ErrorTaskState(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 修复：移除 colors 参数
                 BBQButton(
                     onClick = onOpenInBrowser,
                     text = { Text("浏览链接") },
