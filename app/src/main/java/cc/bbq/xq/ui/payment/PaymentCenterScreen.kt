@@ -93,7 +93,7 @@ fun PaymentCenterScreen(
     val paymentStatus by viewModel.paymentStatus.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val context = LocalContext.current
-
+/*
     // 支付成功后自动触发下载
     LaunchedEffect(paymentStatus) {
         if (paymentStatus == PaymentStatus.SUCCESS) {
@@ -108,6 +108,7 @@ fun PaymentCenterScreen(
             }
         }
     }
+    */
 
     when (paymentStatus) {
         PaymentStatus.SUCCESS -> {

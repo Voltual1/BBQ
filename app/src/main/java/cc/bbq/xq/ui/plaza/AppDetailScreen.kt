@@ -484,23 +484,6 @@ var showMoreMenu by remember { mutableStateOf(false) }
                     
                     // 显示付费信息（如果是付费应用）
                     val raw = appDetail.raw as? cc.bbq.xq.KtorClient.AppDetail
-                    if (raw?.is_pay == 1 && raw.pay_money > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            
-                            // 显示购买状态
-                            if (raw.is_user_pay == true) {
-                                Text(
-                                    "已购买",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                            }
-                        }
-                    }
                     
                     Button(
                     onClick = onDownloadClick,  // 这里会触发购买检查
