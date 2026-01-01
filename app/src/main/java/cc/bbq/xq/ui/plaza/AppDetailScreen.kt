@@ -54,7 +54,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import cc.bbq.xq.ui.theme.UnifiedCommentItem
 
-@OptIn(ExperimentalMaterialApi::class) // 保留 ExperimentalMaterialApi 注解
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun AppDetailScreen(
     appId: String,
@@ -81,10 +81,11 @@ fun AppDetailScreen(
 
     // 应用删除确认对话框
     var showDeleteAppDialog by remember { mutableStateOf(false) }
+    var showMoreMenu by remember { mutableStateOf(false) }
 
     // 评论删除确认对话框
-    var showDeleteCommentDialog by remember { mutableStateOf(false) }  // 修正：使用 Boolean
-    var commentToDeleteId by remember { mutableStateOf<String?>(null) } // 修正：使用 String?
+    var showDeleteCommentDialog by remember { mutableStateOf(false) }
+    var commentToDeleteId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(appId, versionId, storeName) {
         viewModel.initializeData(appId, versionId, storeName)
@@ -112,13 +113,12 @@ fun AppDetailScreen(
     LaunchedEffect(viewModel.navigateToDownloadEvent) {
         viewModel.navigateToDownloadEvent.collectLatest { navigate ->
             if (navigate) {
-                navController.navigate(Download.route)  // 导航到下载管理页面
+                navController.navigate(Download.route)
             }
         }
     }
 
     var refreshing by remember { mutableStateOf(false) }
-    // 修复：使用正确的 rememberPullRefreshState
     val pullRefreshState = rememberPullRefreshState(refreshing, onRefresh = {
         refreshing = true
         viewModel.refresh()
@@ -131,19 +131,56 @@ fun AppDetailScreen(
         }
     }
 
-    // 修复：使用 Modifier.pullRefresh 包装内容
+    // 处理分享功能
+    fun handleShare() {
+        appDetail?.let { detail ->
+            when (detail.store) {
+                AppStore.XIAOQU_SPACE -> {
+                    // 小趣空间：使用 posturl
+                    val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+                    val shareUrl = raw?.posturl
+                    if (!shareUrl.isNullOrBlank()) {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("应用链接", shareUrl)
+                        clipboard.setPrimaryClip(clip)
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("已复制分享链接: $shareUrl")
+                        }
+                    } else {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("分享链接无效")
+                        }
+                    }
+                }
+                AppStore.SIENE_SHOP -> {
+                    // 弦应用商店：使用自定义格式
+                    val shareUrl = "sinemarket://app/${detail.id}"
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("应用链接", shareUrl)
+                    clipboard.setPrimaryClip(clip)
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("已复制分享链接: $shareUrl")
+                    }
+                }
+                else -> {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("暂不支持该商店的分享功能")
+                    }
+                }
+            }
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else if (appDetail != null) {
-            // 弦应用商店才显示版本列表
             val pageCount = if (appDetail!!.store == AppStore.SIENE_SHOP) 2 else 1
             val pagerState = rememberPagerState(pageCount = { pageCount })
             
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 when (page) {
                     0 -> {
-                        // 应用详情页面
                         AppDetailContent(
                             navController = navController,
                             appDetail = appDetail!!,
@@ -155,26 +192,21 @@ fun AppDetailScreen(
                                 showDeleteCommentDialog = true
                             },
                             onDeleteAppClick = { showDeleteAppDialog = true },
+                            onShareClick = { handleShare() },
+                            onMoreMenuClick = { showMoreMenu = true },
                             onImagePreview = { url -> navController.navigate(ImagePreview(url).createRoute()) }
                         )
                     }
                     1 -> {
-                        // 版本列表页面
                         if (appDetail!!.store == AppStore.SIENE_SHOP) {
-                            VersionListScreen(
-                                appId = appDetail!!.id.toInt(),
-                                onVersionSelected = { version ->
-                                    // 切换到详情页面并更新版本
-                                    // 这里可以调用 viewModel 的方法来切换到详情页面并更新版本
-                                    // 但由于我们已经移除了版本列表逻辑，这里暂时只显示 Snackbar
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("选择了版本: ${version.versionName}")
-                                    }
-                                },
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            // 版本列表页面
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("版本列表功能将在后续恢复")
+                            }
                         } else {
-                            // 如果不是弦应用商店，显示错误信息或者空内容
                             Text("版本列表仅在弦应用商店提供")
                         }
                     }
@@ -182,6 +214,7 @@ fun AppDetailScreen(
             }
         }
 
+        // 浮动评论按钮
         FloatingActionButton(
             onClick = { viewModel.openCommentDialog() },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
@@ -191,15 +224,102 @@ fun AppDetailScreen(
             Icon(Icons.AutoMirrored.Filled.Comment, "评论")
         }
 
-        // 修复：使用语义颜色
         PullRefreshIndicator(
             refreshing, 
             pullRefreshState, 
             Modifier.align(Alignment.TopCenter),
-            backgroundColor = MaterialTheme.colorScheme.surface, // 使用语义颜色
-            contentColor = MaterialTheme.colorScheme.primary // 使用语义颜色
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary
         )
         BBQSnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+
+    // 更多菜单
+    if (showMoreMenu) {
+        DropdownMenu(
+            expanded = showMoreMenu,
+            onDismissRequest = { showMoreMenu = false },
+            modifier = Modifier.width(200.dp)
+        ) {
+            // 分享选项
+            DropdownMenuItem(
+                text = { Text("分享应用") },
+                onClick = {
+                    showMoreMenu = false
+                    handleShare()
+                },
+                leadingIcon = {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                }
+            )
+            
+            // 根据商店类型显示不同选项
+            appDetail?.let { detail ->
+                when (detail.store) {
+                    AppStore.XIAOQU_SPACE -> {
+                        // 小趣空间：显示删除选项
+                        DropdownMenuItem(
+                            text = { Text("删除应用") },
+                            onClick = {
+                                showMoreMenu = false
+                                showDeleteAppDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Delete, contentDescription = null)
+                            }
+                        )
+                    }
+                    AppStore.SIENE_SHOP -> {
+                        // 弦应用商店：暂不显示删除（因为服务端不支持）
+                        // 可以在这里添加弦应用商店特有的选项
+                    }
+                }
+            }
+        }
+    }
+
+    // 删除应用确认对话框
+    if (showDeleteAppDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAppDialog = false },
+            title = { Text("确认删除应用") },
+            text = { Text("确定要删除此应用吗？此操作不可撤销。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteAppDialog = false
+                    viewModel.deleteApp { 
+                        navController.popBackStack() 
+                    }
+                }) { 
+                    Text("删除", color = MaterialTheme.colorScheme.error) 
+                }
+            },
+            dismissButton = { 
+                TextButton(onClick = { showDeleteAppDialog = false }) { 
+                    Text("取消") 
+                }
+            }
+        )
+    }
+
+    // 删除评论确认对话框
+    if (showDeleteCommentDialog && commentToDeleteId != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteCommentDialog = false },
+            title = { Text("确认删除评论") },
+            text = { Text("确定要删除这条评论吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteCommentDialog = false
+                    commentToDeleteId?.let { viewModel.deleteComment(it) }
+                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { 
+                TextButton(onClick = { showDeleteCommentDialog = false }) { 
+                    Text("取消") 
+                }
+            }
+        )
     }
 
     DownloadSourceDrawer(
@@ -231,38 +351,6 @@ fun AppDetailScreen(
             onDismiss = { viewModel.closeReplyDialog() },
             context = context,
             onSubmit = { content, _ -> viewModel.submitComment(content) }
-        )
-    }
-
-    // 删除应用确认对话框
-    if (showDeleteAppDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteAppDialog = false },
-            title = { Text("确认删除应用") },
-            text = { Text("确定要删除此应用吗？此操作不可撤销。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteAppDialog = false
-                    viewModel.deleteApp { navController.popBackStack() }
-                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { showDeleteAppDialog = false }) { Text("取消") } }
-        )
-    }
-
-    // 删除评论确认对话框
-    if (showDeleteCommentDialog && commentToDeleteId != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteCommentDialog = false },
-            title = { Text("确认删除评论") },
-            text = { Text("确定要删除这条评论吗？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteCommentDialog = false
-                    commentToDeleteId?.let { viewModel.deleteComment(it) }
-                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = { TextButton(onClick = { showDeleteCommentDialog = false }) { Text("取消") } }
         )
     }
 }

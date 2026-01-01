@@ -81,6 +81,10 @@ class AppDetailComposeViewModel(
 
     private val _currentTab = MutableStateFlow(0) // 0: 详情, 1: 版本列表
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
+    
+    // 分享链接
+    private val _shareLink = MutableStateFlow<String?>(null)
+    val shareLink: StateFlow<String?> = _shareLink.asStateFlow()
 
     //private val _showVersionList = MutableStateFlow(false)
     //val showVersionList: StateFlow<Boolean> = _showVersionList.asStateFlow()
@@ -108,6 +112,50 @@ class AppDetailComposeViewModel(
         currentStore = store
 
         loadData()
+    }
+    
+    // 分享链接
+    fun generateShareLink(): String? {
+        val detail = _appDetail.value ?: return null
+        
+        return when (detail.store) {
+            AppStore.XIAOQU_SPACE -> {
+                // 小趣空间分享链接从 raw 数据获取
+                val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+                raw?.posturl
+            }
+            AppStore.SIENE_SHOP -> {
+                // 弦应用商店分享链接格式：sinemarket://app/{appId}
+                "sinemarket://app/${detail.id}"
+            }
+            else -> null
+        }
+    }
+    
+    // 复制分享链接到剪贴板
+    fun copyShareLink(context: Context): Boolean {
+        val link = generateShareLink()
+        return if (!link.isNullOrBlank()) {
+            _snackbarEvent.tryEmit("已复制分享链接")
+            true
+        } else {
+            _snackbarEvent.tryEmit("无法生成分享链接")
+            false
+        }
+    }
+    
+    // 删除应用（无需鉴权，服务器会处理）
+    fun deleteApp(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            // 直接调用仓库的删除方法，服务器会自行鉴权
+            val result = repository.deleteApp(currentAppId, currentVersionId)
+            if (result.isSuccess) {
+                onSuccess()
+            } else {
+                val error = result.exceptionOrNull()?.message ?: "删除失败"
+                _snackbarEvent.tryEmit(error)
+            }
+        }
     }
 
     fun refresh() {

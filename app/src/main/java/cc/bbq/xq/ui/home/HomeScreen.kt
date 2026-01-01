@@ -548,12 +548,11 @@ private fun FunctionCardSection(
                         )
                     }
             ) {
-                SignInStatusSection(
-                state = state,
-                onSignClick = onSignClick,
-                onRecalculateDays = onRecalculateDays,
-                modifier = Modifier.fillMaxWidth()
-            )
+                Text(
+                    text = state.signStatusMessage ?: "已签到${state.seriesDays}天",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
                 Text(
                     text = "账号已使用${state.displayDaysDiff}天 经验：${state.exp}",
@@ -758,100 +757,6 @@ fun SineShopLoginPrompt(onSineShopLoginClick: () -> Unit) {
             modifier = Modifier.padding(horizontal = 32.dp)
         ) {
             Text("立即登录", style = MaterialTheme.typography.bodyLarge)
-        }
-    }
-}
-
-@Composable
-fun SignInStatusSection(
-    state: HomeState,
-    onSignClick: () -> Unit,
-    onRecalculateDays: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val isSignedToday = remember(state.lastSignTime) {
-        calculateIfSignedToday(state.lastSignTime)
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        if (!isSignedToday) {
-                            onSignClick()
-                        }
-                    },
-                    onLongPress = { onRecalculateDays() }
-                )
-            }
-    ) {
-        // 签到状态文本
-        SignInStatusText(
-            isSignedToday = isSignedToday,
-            seriesDays = state.seriesDays,
-            signStatusMessage = state.signStatusMessage,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // 天数统计
-        Text(
-            text = "账号已使用${state.displayDaysDiff}天 经验：${state.exp}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
-}
-
-@Composable
-fun SignInStatusText(
-    isSignedToday: Boolean,
-    seriesDays: Int,
-    signStatusMessage: String?,
-    modifier: Modifier = Modifier
-) {
-    val text = if (signStatusMessage != null) {
-        signStatusMessage
-    } else if (isSignedToday) {
-        "今日已签到，连续${seriesDays}天"
-    } else {
-        "立即签到（连续${seriesDays}天）"
-    }
-
-    val color = if (isSignedToday) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
-
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-        color = color,
-        modifier = modifier
-    )
-}
-
-// 计算是否今日已签到
-@Composable
-fun calculateIfSignedToday(lastSignTime: String): Boolean {
-    return remember(lastSignTime) {
-        if (lastSignTime.isBlank()) false
-        else try {
-            val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val lastSignDate = format.parse(lastSignTime) ?: return@remember false
-            
-            val calendarLast = Calendar.getInstance().apply { time = lastSignDate }
-            val calendarNow = Calendar.getInstance()
-            
-            calendarLast.get(Calendar.YEAR) == calendarNow.get(Calendar.YEAR) &&
-            calendarLast.get(Calendar.MONTH) == calendarNow.get(Calendar.MONTH) &&
-            calendarLast.get(Calendar.DAY_OF_MONTH) == calendarNow.get(Calendar.DAY_OF_MONTH)
-        } catch (e: Exception) {
-            false
         }
     }
 }
