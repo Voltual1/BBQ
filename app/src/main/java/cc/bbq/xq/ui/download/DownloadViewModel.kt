@@ -49,6 +49,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             // 连上服务后，立即开始观察状态
             observeServiceStatus()
         }
+        
 
         override fun onServiceDisconnected(name: ComponentName?) {
             downloadService = null
