@@ -490,12 +490,6 @@ var showMoreMenu by remember { mutableStateOf(false) }
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                "价格: ${raw.pay_money} 硬币",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold
-                            )
                             
                             // 显示购买状态
                             if (raw.is_user_pay == true) {
