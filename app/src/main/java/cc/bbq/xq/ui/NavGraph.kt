@@ -460,8 +460,8 @@ composable(route = UpdateAppRelease("").route, arguments = UpdateAppRelease.argu
             paymentViewModel.setPaymentInfo(type = PaymentType.POST_REWARD, locked = false)
             PaymentCenterScreen(
                 viewModel = paymentViewModel,
-                modifier = Modifier.fillMaxSize()//,
-//                navController = navController // 传递 navController
+                modifier = Modifier.fillMaxSize(),
+                navController = navController // 传递 navController
             )
         }
 
@@ -479,8 +479,8 @@ composable(route = UpdateAppRelease("").route, arguments = UpdateAppRelease.argu
             )
             PaymentCenterScreen(
                 viewModel = paymentViewModel,
-                modifier = Modifier.fillMaxSize()//,
-//                navController = navController // 传递 navController
+                modifier = Modifier.fillMaxSize(),
+                navController = navController // 传递 navController
             )
         }
 
@@ -498,8 +498,8 @@ composable(route = UpdateAppRelease("").route, arguments = UpdateAppRelease.argu
             )
             PaymentCenterScreen(
                 viewModel = paymentViewModel,
-                modifier = Modifier.fillMaxSize()//,
-//                navController = navController // 传递 navController
+                modifier = Modifier.fillMaxSize(),
+                navController = navController // 传递 navController
             )
         }
        
