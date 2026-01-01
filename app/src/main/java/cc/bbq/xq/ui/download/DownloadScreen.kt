@@ -9,6 +9,8 @@
 package cc.bbq.xq.ui.download
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
@@ -247,30 +249,79 @@ fun DownloadTaskItem(
         else -> DownloadStatus.Idle
     }
 
-    // 长按检测
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .pointerInput(Unit) {
-                // 使用正确的长按检测方式
-                detectTapGestures(
-                    onLongPress = {
-                        onLongClick(task)
-                    }
+    BBQCard(modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 4.dp)
+        .pointerInput(Unit) {
+            // 使用正确的长按检测方式
+            detectTapGestures(
+                onLongPress = {
+                    onLongClick(task)
+                }
+            )
+        }) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = task.fileName,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                // 根据下载状态显示不同的内容
+                when (status) {
+                    is DownloadStatus.Idle -> Text("等待下载")
+                    is DownloadStatus.Pending -> Text("准备中...")
+                    is DownloadStatus.Downloading -> Text("${(status.progress * 100).toInt()}%")
+                    is DownloadStatus.Paused -> Text("已暂停")
+                    is DownloadStatus.Success -> Text("已完成")
+                    is DownloadStatus.Error -> Text("下载失败")
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "保存至：${task.savePath}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                // 添加“浏览链接”按钮
+                BBQButton(
+                    onClick = {
+                        // 打开浏览器访问下载链接
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(task.url))
+                        context.startActivity(intent)
+                    },
+                    text = { Text("浏览链接") }
                 )
             }
-    ) {
-        when (status) {
-            is DownloadStatus.Idle -> EmptyDownloadState()
-            is DownloadStatus.Pending -> PendingDownloadState()
-            is DownloadStatus.Downloading -> DownloadingState(
-                status = status,
-                onCancel = { viewModel.cancelDownload() }
-            )
-            is DownloadStatus.Paused -> PausedState(status)
-            is DownloadStatus.Success -> SuccessState(status)
-            is DownloadStatus.Error -> ErrorState(status)
+
+            if (status is DownloadStatus.Success) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    BBQButton(
+                        onClick = {
+                            // 使用 FileActionUtil 打开文件
+                            FileActionUtil.openFile(context, (status as DownloadStatus.Success).file)
+                        },
+                        text = { Text("查看文件") }
+                    )
+                }
+            }
         }
     }
 }
