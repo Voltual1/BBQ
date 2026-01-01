@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import cc.bbq.xq.AppStore
 import cc.bbq.xq.data.unified.UnifiedAppItem
+import androidx.compose.runtime.saveable.rememberSaveable
 import cc.bbq.xq.data.unified.UnifiedCategory
 import cc.bbq.xq.ui.compose.PageJumpDialog
 import cc.bbq.xq.ui.compose.PaginationControls
