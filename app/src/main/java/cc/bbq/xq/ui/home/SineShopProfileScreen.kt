@@ -101,6 +101,13 @@ fun SineShopProfileScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(
+                    text = "⚠️ 本第三方客户端的弦应用商店相关功能仍在完善中，部分功能可能暂时不可用",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    lineHeight = 14.sp
+                )
             }
         }
 
