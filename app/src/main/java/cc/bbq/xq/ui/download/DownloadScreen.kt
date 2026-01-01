@@ -38,8 +38,7 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 // 关键：导入 FileActionUtil
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
-import androidx.compose.ui.res.stringResource
-import cc.bbq.xq.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun DownloadScreen(
@@ -248,26 +247,19 @@ fun DownloadTaskItem(
     }
 
     // 长按检测
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .pointerInput(Unit) {
-                detectLongPress(
+                // 使用正确的长按检测方式
+                detectTapGestures(
                     onLongPress = {
                         onLongClick(task)
                     }
                 )
             }
-            .background(MaterialTheme.colorScheme.surface, AppShapes.small)
-            .clip(AppShapes.small)
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        // 显示下载任务内容
         when (status) {
             is DownloadStatus.Idle -> EmptyDownloadState()
             is DownloadStatus.Pending -> PendingDownloadState()
@@ -333,7 +325,8 @@ fun DownloadingState(
     BBQCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidthArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
