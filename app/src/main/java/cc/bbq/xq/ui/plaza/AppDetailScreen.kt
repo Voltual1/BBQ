@@ -202,7 +202,7 @@ fun AppDetailScreen(
                             },
                             onDeleteAppClick = { showDeleteAppDialog = true },
                             onShareClick = { handleShare() },
-                            onMoreMenuClick = { showMoreMenu = true },
+//                            onMoreMenuClick = { showMoreMenu = true },
                             onImagePreview = { url -> navController.navigate(ImagePreview(url).createRoute()) }
                         )
                     }
@@ -414,7 +414,7 @@ var showMoreMenu by remember { mutableStateOf(false) }
                                 }
                             }
                         }
-                    }
+                        
                     }
                     Spacer(Modifier.height(16.dp))
                     Button(
