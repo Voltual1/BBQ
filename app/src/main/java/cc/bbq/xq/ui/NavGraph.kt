@@ -82,23 +82,6 @@ fun AppNavHost(
 //    val density = LocalDensity.current
     val slideDistance = rememberSlideDistance()
 
-    // 将 ViewModel 的创建移动到 AppNavHost 函数中
-    val searchViewModel: SearchViewModel = org.koin.androidx.compose.koinViewModel()
-    val postCreateViewModel: PostCreateViewModel = org.koin.androidx.compose.koinViewModel()
-    val plazaViewModel: PlazaViewModel = org.koin.androidx.compose.koinViewModel { parametersOf(false) }
-    val appReleaseViewModel: AppReleaseViewModel = org.koin.androidx.compose.koinViewModel()
-    val messageViewModel: MessageViewModel = org.koin.androidx.compose.koinViewModel()
-    val billingViewModel: BillingViewModel = org.koin.androidx.compose.koinViewModel()
-    val paymentViewModel: PaymentViewModel = org.koin.androidx.compose.koinViewModel()
-    val playerViewModel: PlayerViewModel = org.koin.androidx.compose.koinViewModel()
-    val communityViewModel: CommunityViewModel = org.koin.androidx.compose.koinViewModel()
-    val myLikesViewModel: MyLikesViewModel = org.koin.androidx.compose.koinViewModel()
-    val hotPostsViewModel: HotPostsViewModel = org.koin.androidx.compose.koinViewModel()
-    val followingPostsViewModel: FollowingPostsViewModel = org.koin.androidx.compose.koinViewModel()
-//    val userDetailViewModel: UserDetailViewModel = org.koin.androidx.compose.koinViewModel()
-    val myPostsViewModel: MyPostsViewModel = org.koin.androidx.compose.koinViewModel()
-    val appDetailViewModel: AppDetailComposeViewModel = org.koin.androidx.compose.koinViewModel()
-
     NavHost(
         navController = navController,
         startDestination = Home.route,

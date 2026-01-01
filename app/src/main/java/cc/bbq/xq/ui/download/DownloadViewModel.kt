@@ -14,11 +14,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cc.bbq.xq.data.db.AppDatabase
-import cc.bbq.xq.data.db.DownloadTask
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
 import kotlinx.coroutines.flow.*
@@ -31,11 +29,10 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
 
     // 添加一个 StateFlow 来存储从数据库获取的所有下载任务
-    private val _downloadTasks = MutableStateFlow<List<DownloadTask>>(emptyList())
-    val downloadTasks: StateFlow<List<DownloadTask>> = _downloadTasks.asStateFlow()
+    private val _downloadTasks = MutableStateFlow<List<cc.bbq.xq.service.download.DownloadTask>>(emptyList())
+    val downloadTasks: StateFlow<List<cc.bbq.xq.service.download.DownloadTask>> = _downloadTasks.asStateFlow()
 
     private var downloadService: DownloadService? = null
-    
     private var isBound = false
 
     // 添加 AppDatabase 实例
@@ -50,7 +47,6 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
             // 连上服务后，立即开始观察状态
             observeServiceStatus()
         }
-        
 
         override fun onServiceDisconnected(name: ComponentName?) {
             downloadService = null
@@ -98,7 +94,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     /**
      * 根据 URL 获取特定的下载任务
      */
-    fun getDownloadTaskByUrl(url: String): DownloadTask? {
+    fun getDownloadTaskByUrl(url: String): cc.bbq.xq.service.download.DownloadTask? {
         return _downloadTasks.value.find { it.url == url }
     }
 
@@ -112,32 +108,30 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         // 暂时模拟重置状态
         _downloadStatus.value = DownloadStatus.Idle
     }
+    
+    /** 
+     * 从数据库删除指定的下载任务 
+     * 在协程中执行数据库操作
+     */
+    fun deleteDownloadTask(task: cc.bbq.xq.service.download.DownloadTask) {
+        viewModelScope.launch {
+            try {
+                downloadTaskDao.delete(task)
+                Log.d("DownloadViewModel", "Deleted download task for URL: ${task.url}")
+                 // 可选：如果删除的是当前正在处理的任务，也可以取消它
+                // if (currentTaskUrl == task.url) { cancelDownload() }
+            } catch (e: Exception) {
+                Log.e("DownloadViewModel", "Failed to delete download task for URL: ${task.url}", e)
+                // 可以通过状态或SnackBar等方式通知用户删除失败
+            }
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
         if (isBound) {
             getApplication<Application>().unbindService(serviceConnection)
             isBound = false
-        }
-    }
-
-    companion object {
-        private const val TAG = "DownloadViewModel"
-    }
-
-    /**
-     * 删除下载任务（从数据库和UI中移除）
-     */
-    fun deleteTask(task: DownloadTask) {
-        viewModelScope.launch {
-            try {
-                // 从数据库删除任务
-                downloadTaskDao.delete(task)
-                Log.d(TAG, "Download task deleted: ${task.fileName}")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete download task", e)
-                // 可以在这里添加错误提示
-            }
         }
     }
 }
