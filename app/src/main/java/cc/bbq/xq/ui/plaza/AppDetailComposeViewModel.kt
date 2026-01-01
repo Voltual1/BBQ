@@ -91,6 +91,22 @@ class AppDetailComposeViewModel(
 
     private val repository: IAppStoreRepository
         get() = repositories[currentStore] ?: throw IllegalStateException("Repository not found")
+        
+    // 退币事件
+    private val _refundEvent = MutableSharedFlow<RefundInfo>()
+    val refundEvent: SharedFlow<RefundInfo> = _refundEvent.asSharedFlow()
+
+    // 更新事件
+    private val _updateEvent = MutableSharedFlow<String>()
+    val updateEvent: SharedFlow<String> = _updateEvent.asSharedFlow()
+
+    // 退款信息数据类
+    data class RefundInfo(
+        val appId: String,
+        val versionId: Long,
+        val appName: String,
+        val payMoney: Int
+    )    
 
     // 新增：获取设备SDK版本
     val deviceSdkVersion: Int
@@ -112,6 +128,47 @@ class AppDetailComposeViewModel(
         currentStore = store
 
         loadData()
+    }
+    
+    // 请求退款功能（仅小趣空间）
+    fun requestRefund() {
+        viewModelScope.launch {
+            val detail = _appDetail.value ?: return@launch
+            
+            if (detail.store == AppStore.XIAOQU_SPACE) {
+                val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+                if (raw != null) {
+                    _refundEvent.emit(
+                        RefundInfo(
+                            appId = currentAppId,
+                            versionId = currentVersionId,
+                            appName = detail.name,
+                            payMoney = raw.pay_money
+                        )
+                    )
+                }
+            } else {
+                _snackbarEvent.tryEmit("该商店不支持退币功能")
+            }
+        }
+    }
+
+    // 请求更新功能（仅小趣空间）
+    fun requestUpdate() {
+        viewModelScope.launch {
+            val detail = _appDetail.value ?: return@launch
+            
+            if (detail.store == AppStore.XIAOQU_SPACE) {
+                val raw = detail.raw as? cc.bbq.xq.KtorClient.AppDetail
+                if (raw != null) {
+                    // 使用 KtorClient 的 JsonConverter 将 AppDetail 转换为 JSON 字符串
+                    val appDetailJson = KtorClient.JsonConverter.toJson(raw)
+                    _updateEvent.emit(appDetailJson)
+                }
+            } else {
+                _snackbarEvent.tryEmit("该商店不支持更新功能")
+            }
+        }
     }
     
     // 分享链接

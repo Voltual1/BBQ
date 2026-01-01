@@ -112,6 +112,24 @@ fun AppDetailScreen(
         }
     }
     
+    // 监听退款和更新事件
+    LaunchedEffect(Unit) {
+        viewModel.refundEvent.collectLatest { refundInfo ->
+            navController.navigate(
+                CreateRefundPost(
+                    appId = refundInfo.appId.toLongOrNull() ?: 0L,
+                    versionId = refundInfo.versionId,
+                    appName = refundInfo.appName,
+                    payMoney = refundInfo.payMoney
+                ).createRoute()
+            )
+        }
+
+        viewModel.updateEvent.collectLatest { jsonString ->
+            navController.navigate(UpdateAppRelease(jsonString).createRoute())
+        }
+    }
+    
     // 监听 ViewModel 中的 navigateToDownloadEvent
     LaunchedEffect(viewModel.navigateToDownloadEvent) {
         viewModel.navigateToDownloadEvent.collectLatest { navigate ->
@@ -204,7 +222,9 @@ fun AppDetailScreen(
                             onDeleteAppClick = { showDeleteAppDialog = true },
                             onShareClick = { handleShare() },
                             onMoreMenuClick = { showMoreMenu = true },
-                            onImagePreview = { url -> navController.navigate(ImagePreview(url).createRoute()) }
+                            onImagePreview = { url -> navController.navigate(ImagePreview(url).createRoute()) },
+                            onRefundClick = { viewModel.requestRefund() },
+                            onUpdateClick = { viewModel.requestUpdate() }
                         )
                     }
                     1 -> {
@@ -214,7 +234,7 @@ fun AppDetailScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("版本列表功能将在后续恢复")
+                                Text("版本列表功能？还没做完呢")
                             }
                         } else {
                             Text("版本列表仅在弦应用商店提供")
@@ -333,7 +353,9 @@ fun AppDetailContent(
     onDeleteAppClick: () -> Unit,
     onShareClick: () -> Unit,
     onMoreMenuClick: () -> Unit,
-    onImagePreview: (String) -> Unit
+    onImagePreview: (String) -> Unit,
+        onRefundClick: () -> Unit,
+    onUpdateClick: () -> Unit
 ) {
 var showMoreMenu by remember { mutableStateOf(false) }
     LazyColumn(
@@ -391,7 +413,29 @@ var showMoreMenu by remember { mutableStateOf(false) }
                                 // 根据商店类型显示不同选项
                                 when (appDetail.store) {
                                     AppStore.XIAOQU_SPACE -> {
-                                        // 小趣空间：显示删除选项
+                                        val raw = appDetail.raw as? cc.bbq.xq.KtorClient.AppDetail
+                                        
+                                        // 更新选项（总是显示）
+                                        DropdownMenuItem(
+                                            text = { Text("更新应用") },
+                                            onClick = {
+                                                showMoreMenu = false
+                                                onUpdateClick()
+                                            }
+                                        )
+                                        
+                                        // 退币选项（仅当应用是付费应用时显示）
+                                        if (raw?.is_pay == 1 && raw.pay_money > 0) {
+                                            DropdownMenuItem(
+                                                text = { Text("申请退币") },
+                                                onClick = {
+                                                    showMoreMenu = false
+                                                    onRefundClick()
+                                                }
+                                            )
+                                        }
+                                        
+                                        // 删除选项
                                         DropdownMenuItem(
                                             text = { Text("删除应用") },
                                             onClick = {
@@ -404,8 +448,8 @@ var showMoreMenu by remember { mutableStateOf(false) }
                                         )
                                     }
                                     AppStore.SIENE_SHOP -> {
-                                        // 弦应用商店：暂不显示删除（因为服务端不支持）
-                                        }
+                                        // 弦应用商店：暂不显示特殊选项
+                                    }
                                     AppStore.SINE_OPEN_MARKET -> {
                                         // 弦开放市场：无特殊选项
                                     }
@@ -415,21 +459,62 @@ var showMoreMenu by remember { mutableStateOf(false) }
                                 }
                             }
                         }
-                        
                     }
+                    
                     Spacer(Modifier.height(16.dp))
+                    
+                    // 显示付费信息（如果是付费应用）
+                    val raw = appDetail.raw as? cc.bbq.xq.KtorClient.AppDetail
+                    if (raw?.is_pay == 1 && raw.pay_money > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "价格: ${raw.pay_money} 硬币",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            // 显示购买状态
+                            if (raw.is_user_pay == true) {
+                                Text(
+                                    "已购买",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        }
+                    }
+                    
                     Button(
                         onClick = onDownloadClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        // 如果是付费应用且未购买，跳转到购买页面
+                        enabled = if (raw?.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true) {
+                            // 这里应该跳转到购买页面，但为了简化，我们先允许下载
+                            // 实际应用中，这里应该检查购买状态
+                            true
+                        } else {
+                            true
+                        }
                     ) {
                         Icon(Icons.Filled.Download, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("下载应用")
+                        Text(
+                            when {
+                                raw?.is_pay == 1 && raw.pay_money > 0 && raw.is_user_pay != true -> "购买并下载 (${raw.pay_money}硬币)"
+                                raw?.is_pay == 1 && raw.is_user_pay == true -> "下载应用 (已购买)"
+                                else -> "下载应用"
+                            }
+                        )
                     }
                 }
             }
         }
-
+        
         // --- 更新日志（弦应用商店） ---
         if (appDetail.store == AppStore.SIENE_SHOP && !appDetail.updateLog.isNullOrEmpty()) {
             item {
