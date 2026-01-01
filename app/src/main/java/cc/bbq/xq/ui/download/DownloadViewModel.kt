@@ -19,10 +19,10 @@ import androidx.lifecycle.viewModelScope
 import cc.bbq.xq.data.db.AppDatabase
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
+import cc.bbq.xq.service.download.DownloadTask
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
-import java.io.File
 
 @KoinViewModel
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {
@@ -30,8 +30,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
 
     // 添加一个 StateFlow 来存储从数据库获取的所有下载任务
-    private val _downloadTasks = MutableStateFlow<List<cc.bbq.xq.service.download.DownloadTask>>(emptyList())
-    val downloadTasks: StateFlow<List<cc.bbq.xq.service.download.DownloadTask>> = _downloadTasks.asStateFlow()
+    private val _downloadTasks = MutableStateFlow<List<DownloadTask>>(emptyList())
+    val downloadTasks: StateFlow<List<DownloadTask>> = _downloadTasks.asStateFlow()
 
     private var downloadService: DownloadService? = null
     private var isBound = false
@@ -95,7 +95,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     /**
      * 根据 URL 获取特定的下载任务
      */
-    fun getDownloadTaskByUrl(url: String): cc.bbq.xq.service.download.DownloadTask? {
+    fun getDownloadTaskByUrl(url: String): DownloadTask? {
         return _downloadTasks.value.find { it.url == url }
     }
 
@@ -111,27 +111,19 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * 删除下载任务及其对应文件
-     * @param task 要删除的下载任务
+     * 删除下载任务
      */
-    fun deleteDownloadTask(task: cc.bbq.xq.service.download.DownloadTask) {
+    fun deleteDownloadTask(url: String) {
         viewModelScope.launch {
-            try {
-                // 1. 从数据库中删除任务记录
-                downloadTaskDao.delete(task)
-                
-                // 2. 删除本地文件（如果存在）
-                val file = File(task.savePath, task.fileName)
-                if (file.exists()) {
-                    val deleted = file.delete()
-                    if (deleted) {
-                        // 文件删除成功
-                    } else {
-                        // 文件删除失败，可以记录日志
-                    }
+            // 1. Delete from the database
+            val taskToDelete = _downloadTasks.value.find { it.url == url }
+            if (taskToDelete != null) {
+                downloadTaskDao.delete(taskToDelete)
+
+                // 2. Update the StateFlow (remove the task)
+                _downloadTasks.value = _downloadTasks.value.toMutableList().apply {
+                    remove(taskToDelete)
                 }
-            } catch (e: Exception) {
-                // 处理删除过程中的异常
             }
         }
     }

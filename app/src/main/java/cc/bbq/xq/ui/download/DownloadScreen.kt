@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.text.format.Formatter
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,12 +22,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,7 +39,7 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 // 关键：导入 FileActionUtil
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun DownloadScreen(
@@ -51,10 +49,6 @@ fun DownloadScreen(
     val status by viewModel.downloadStatus.collectAsState()
     // 从 ViewModel 获取所有下载任务
     val downloadTasks by viewModel.downloadTasks.collectAsState()
-
-    // 删除对话框状态
-    val (showDeleteDialog, setShowDeleteDialog) = remember { mutableStateOf(false) }
-    val (selectedTask, setSelectedTask) = remember { mutableStateOf<DownloadTask?>(null) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -86,146 +80,18 @@ fun DownloadScreen(
                 // 如果有下载任务，则显示下载任务列表
                 LazyColumn {
                     items(downloadTasks) { task ->
-                        DownloadTaskItem(
-                            task = task,
-                            viewModel = viewModel,
-                            onLongClick = { downloadTask ->
-                                setSelectedTask(downloadTask)
-                                setShowDeleteDialog(true)
-                            }
-                        )
+                        DownloadTaskItem(task = task, viewModel = viewModel)
                     }
                 }
             }
         }
-
-        // 删除确认对话框
-        DeleteConfirmationDialog(
-            show = showDeleteDialog,
-            task = selectedTask,
-            onConfirm = { task ->
-                viewModel.deleteDownloadTask(task)
-                setShowDeleteDialog(false)
-                setSelectedTask(null)
-            },
-            onDismiss = {
-                setShowDeleteDialog(false)
-                setSelectedTask(null)
-            }
-        )
-    }
-}
-
-@Composable
-fun DeleteConfirmationDialog(
-    show: Boolean,
-    task: DownloadTask?,
-    onConfirm: (DownloadTask) -> Unit,
-    onDismiss: () -> Unit
-) {
-    if (show && task != null) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "删除下载任务",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "确定要删除以下下载任务吗？",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = task.fileName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "保存位置：${task.savePath}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            val statusText = when (task.status) {
-                                DownloadStatus.Idle::class.java.simpleName -> "空闲"
-                                DownloadStatus.Pending::class.java.simpleName -> "等待中"
-                                DownloadStatus.Downloading::class.java.simpleName -> "下载中"
-                                DownloadStatus.Paused::class.java.simpleName -> "已暂停"
-                                DownloadStatus.Success::class.java.simpleName -> "已完成"
-                                DownloadStatus.Error::class.java.simpleName -> "下载失败"
-                                else -> "未知状态"
-                            }
-                            Text(
-                                text = "状态：$statusText",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "此操作将删除下载任务记录和已下载的文件（如果存在），且无法恢复。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { onConfirm(task) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("删除")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("取消")
-                }
-            }
-        )
     }
 }
 
 @Composable
 fun DownloadTaskItem(
     task: DownloadTask,
-    viewModel: DownloadViewModel,
-    onLongClick: (DownloadTask) -> Unit // 添加长按回调
+    viewModel: DownloadViewModel
 ) {
     val context = LocalContext.current
     val status = when (task.status) {
@@ -248,71 +114,32 @@ fun DownloadTaskItem(
         DownloadStatus.Error::class.java.simpleName -> DownloadStatus.Error(message = "未知错误")
         else -> DownloadStatus.Idle
     }
+    val coroutineScope = rememberCoroutineScope()
 
-    BBQCard(modifier = Modifier
-        .fillMaxWidth()
-        .padding(vertical = 4.dp)
-        .pointerInput(Unit) {
-            // 使用正确的长按检测方式
-            detectTapGestures(
-                onLongPress = {
-                    onLongClick(task)
-                }
-            )
-        }) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = task.fileName,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                // 根据下载状态显示不同的内容
-                when (status) {
-                    is DownloadStatus.Idle -> Text("等待下载")
-                    is DownloadStatus.Pending -> Text("准备中...")
-                    is DownloadStatus.Downloading -> Text("${(status.progress * 100).toInt()}%")
-                    is DownloadStatus.Paused -> Text("已暂停")
-                    is DownloadStatus.Success -> Text("已完成")
-                    is DownloadStatus.Error -> Text("下载失败")
-                }
-            }
+    BBQCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text(text = task.fileName, fontWeight = FontWeight.Bold)
+            Text(text = "URL: ${task.url}", overflow = TextOverflow.Ellipsis, maxLines = 1)
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "保存至：${task.savePath}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+
+            // Display the appropriate state-specific UI
+            when (status) {
+                is DownloadStatus.Idle -> EmptyDownloadState()
+                is DownloadStatus.Pending -> PendingDownloadState()
+                is DownloadStatus.Downloading -> DownloadingState(
+                    status = status,
+                    onCancel = { viewModel.cancelDownload() }
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                // 添加“浏览链接”按钮
-                BBQButton(
-                    onClick = {
-                        // 打开浏览器访问下载链接
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(task.url))
-                        context.startActivity(intent)
-                    },
-                    text = { Text("浏览链接") }
-                )
+                is DownloadStatus.Paused -> PausedState(status)
+                is DownloadStatus.Success -> SuccessState(status)
+                is DownloadStatus.Error -> ErrorState(status)
             }
 
-            if (status is DownloadStatus.Success) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                if (status is DownloadStatus.Success) {
                     BBQButton(
                         onClick = {
                             // 使用 FileActionUtil 打开文件
@@ -321,6 +148,37 @@ fun DownloadTaskItem(
                         text = { Text("查看文件") }
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                BBQButton(
+                    onClick = {
+                        // Browse Link
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(task.url))
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "无法打开链接: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    text = { Text("浏览链接") }
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                BBQButton(
+                    onClick = {
+                        // Delete Task
+                        coroutineScope.launch {
+                            // Assuming you have a deleteDownloadTask function in your ViewModel
+                            // that takes the task's URL as an argument
+                            //viewModel.deleteDownloadTask(task.url)
+                            //TODO: this function is not implemented yet.
+                            Toast.makeText(context, "删除任务", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    text = { Text("删除任务") }
+                )
             }
         }
     }
@@ -451,8 +309,7 @@ fun PausedState(status: DownloadStatus.Paused) {
                 Text("下载已暂停", style = MaterialTheme.typography.titleMedium)
                 Text(
                     "已下载: ${formatFileSize(LocalContext.current, status.downloadedBytes)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -490,16 +347,6 @@ fun SuccessState(status: DownloadStatus.Success) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                BBQButton(
-                    onClick = {
-                        // 使用 FileActionUtil 打开文件
-                        FileActionUtil.openFile(context, status.file)
-                    },
-                    text = { Text("查看文件") }
-                )
             }
         }
     }
