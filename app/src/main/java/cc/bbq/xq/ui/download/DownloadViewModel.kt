@@ -35,6 +35,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     val downloadTasks: StateFlow<List<DownloadTask>> = _downloadTasks.asStateFlow()
 
     private var downloadService: DownloadService? = null
+    
     private var isBound = false
 
     // 添加 AppDatabase 实例
