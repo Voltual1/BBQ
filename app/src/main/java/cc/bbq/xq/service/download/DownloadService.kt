@@ -71,7 +71,7 @@ class DownloadService : Service() {
         Log.d(TAG, "DownloadService created")
         downloader = KtorDownloader()
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        createNotificationChannel()
+//        createNotificationChannel()
 
         // 初始化 AppDatabase
         appDatabase = AppDatabase.getDatabase(this)
@@ -243,7 +243,7 @@ class DownloadService : Service() {
     private fun ensureForegroundService(fileName: String) {
         val status = downloader.status.value
         if (status is DownloadStatus.Downloading || status is DownloadStatus.Pending) {
-            val notification = buildNotification(status, fileName)
+//            val notification = buildNotification(status, fileName)
             startForeground(NOTIFICATION_ID, notification)
         }
     }
