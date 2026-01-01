@@ -9,6 +9,7 @@ import cc.bbq.xq.AppStore
 import cc.bbq.xq.data.repository.IAppStoreRepository
 import cc.bbq.xq.data.unified.*
 import kotlinx.coroutines.flow.MutableSharedFlow
+import cc.bbq.xq.KtorClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import android.content.Context
