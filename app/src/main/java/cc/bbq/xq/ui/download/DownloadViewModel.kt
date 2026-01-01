@@ -19,10 +19,10 @@ import androidx.lifecycle.viewModelScope
 import cc.bbq.xq.data.db.AppDatabase
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
-import cc.bbq.xq.service.download.DownloadTask  // 添加这行导入
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
+import java.io.File
 
 @KoinViewModel
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {
@@ -30,8 +30,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
 
     // 添加一个 StateFlow 来存储从数据库获取的所有下载任务
-    private val _downloadTasks = MutableStateFlow<List<DownloadTask>>(emptyList())
-    val downloadTasks: StateFlow<List<DownloadTask>> = _downloadTasks.asStateFlow()
+    private val _downloadTasks = MutableStateFlow<List<cc.bbq.xq.service.download.DownloadTask>>(emptyList())
+    val downloadTasks: StateFlow<List<cc.bbq.xq.service.download.DownloadTask>> = _downloadTasks.asStateFlow()
 
     private var downloadService: DownloadService? = null
     private var isBound = false
@@ -95,17 +95,8 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     /**
      * 根据 URL 获取特定的下载任务
      */
-    fun getDownloadTaskByUrl(url: String): DownloadTask? {
+    fun getDownloadTaskByUrl(url: String): cc.bbq.xq.service.download.DownloadTask? {
         return _downloadTasks.value.find { it.url == url }
-    }
-
-    /**
-     * 删除下载任务（从数据库）
-     */
-    fun deleteDownloadTask(task: DownloadTask) {
-        viewModelScope.launch {
-            downloadTaskDao.delete(task)
-        }
     }
 
     /**
@@ -117,6 +108,32 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         // downloadService?.cancelCurrentTask()
         // 暂时模拟重置状态
         _downloadStatus.value = DownloadStatus.Idle
+    }
+
+    /**
+     * 删除下载任务及其对应文件
+     * @param task 要删除的下载任务
+     */
+    fun deleteDownloadTask(task: cc.bbq.xq.service.download.DownloadTask) {
+        viewModelScope.launch {
+            try {
+                // 1. 从数据库中删除任务记录
+                downloadTaskDao.delete(task)
+                
+                // 2. 删除本地文件（如果存在）
+                val file = File(task.savePath, task.fileName)
+                if (file.exists()) {
+                    val deleted = file.delete()
+                    if (deleted) {
+                        // 文件删除成功
+                    } else {
+                        // 文件删除失败，可以记录日志
+                    }
+                }
+            } catch (e: Exception) {
+                // 处理删除过程中的异常
+            }
+        }
     }
 
     override fun onCleared() {
