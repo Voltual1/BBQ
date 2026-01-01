@@ -30,7 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.bbq.xq.service.download.DownloadStatus
-import cc.bbq.xq.data.db.DownloadTask // 导入 DownloadTask
+import cc.bbq.xq.service.download.DownloadTask
 import cc.bbq.xq.ui.theme.AppShapes
 import cc.bbq.xq.ui.theme.BBQButton
 import cc.bbq.xq.ui.theme.BBQCard
@@ -39,7 +39,6 @@ import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.OpenInBrowser
-import kotlinx.coroutines.launch
 
 @Composable
 fun DownloadScreen(
@@ -82,14 +81,11 @@ fun DownloadScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(
-                        items = downloadTasks, // 显式指定类型
-                        key = { it.url }
-                    ) { task ->
+                    items(downloadTasks) { task ->
                         DownloadTaskItem(
                             task = task,
                             viewModel = viewModel,
-                            onDeleteTask = { viewModel.deleteTask(task, context) },
+                            onDeleteTask = { viewModel.deleteTask(task) },
                             onOpenInBrowser = { url ->
                                 try {
                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -345,7 +341,6 @@ fun SuccessTaskState(
     onOpenInBrowser: () -> Unit
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     BBQCard(modifier = Modifier.fillMaxWidth()) {
@@ -469,7 +464,6 @@ fun ErrorTaskState(
     onDeleteTask: () -> Unit,
     onOpenInBrowser: () -> Unit
 ) {
-    val coroutineScope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     BBQCard(

@@ -14,16 +14,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cc.bbq.xq.data.db.AppDatabase
-import cc.bbq.xq.data.db.DownloadTask // 导入 DownloadTask
+import cc.bbq.xq.data.db.DownloadTask
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
-import android.util.Log // 导入 Log
 
 @KoinViewModel
 class DownloadViewModel(application: Application) : AndroidViewModel(application) {
@@ -126,7 +126,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     /**
      * 删除下载任务（从数据库和UI中移除）
      */
-    fun deleteTask(task: DownloadTask, context: Context) {
+    fun deleteTask(task: DownloadTask) {
         viewModelScope.launch {
             try {
                 // 从数据库删除任务
