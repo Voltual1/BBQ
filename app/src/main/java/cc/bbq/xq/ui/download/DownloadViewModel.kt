@@ -8,6 +8,7 @@
 // 如果没有，请查阅 <http://www.gnu.org/licenses/>.
 package cc.bbq.xq.ui.download
 
+
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
