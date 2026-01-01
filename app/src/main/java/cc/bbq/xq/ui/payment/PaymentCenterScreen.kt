@@ -18,7 +18,6 @@ import androidx.navigation.NavController
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,7 +37,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Download // 修改这里
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -104,8 +103,8 @@ fun PaymentCenterScreen(
                 val fileName = viewModel.getDownloadFileName() ?: "download_file.apk"
                 startInternalDownload(context, downloadUrl, fileName)
                 
-                // 导航到下载屏幕
-                navController?.navigate(Download.route)
+                // 导航到下载屏幕 - 使用字符串路由
+                navController?.navigate("download") // 改为字符串路由
             }
         }
     }
@@ -124,8 +123,8 @@ fun PaymentCenterScreen(
                     val fileName = viewModel.getDownloadFileName()
                     if (!downloadUrl.isNullOrEmpty() && !fileName.isNullOrEmpty()) {
                         startInternalDownload(context, downloadUrl, fileName)
-                        // 导航到下载屏幕
-                        navController?.navigate(Download.route)
+                        // 导航到下载屏幕 - 使用字符串路由
+                        navController?.navigate("download") // 改为字符串路由
                     }
                 },
                 showDownloadButton = paymentInfo?.type == PaymentType.APP_PURCHASE
