@@ -116,22 +116,23 @@ fun AppDetailScreen(
     }
     
     // 监听退款和更新事件
-    LaunchedEffect(Unit) {
-        viewModel.refundEvent.collectLatest { refundInfo ->
-            navController.navigate(
-                CreateRefundPost(
-                    appId = refundInfo.appId.toLongOrNull() ?: 0L,
-                    versionId = refundInfo.versionId,
-                    appName = refundInfo.appName,
-                    payMoney = refundInfo.payMoney
-                ).createRoute()
-            )
-        }
-
-        viewModel.updateEvent.collectLatest { jsonString ->
-            navController.navigate(UpdateAppRelease(jsonString).createRoute())
-        }
+LaunchedEffect(Unit) {
+    viewModel.refundEvent.collectLatest { refundInfo ->
+        navController.navigate(
+            CreateRefundPost(
+                appId = refundInfo.appId.toLongOrNull() ?: 0L,
+                versionId = refundInfo.versionId,
+                appName = refundInfo.appName,
+                payMoney = refundInfo.payMoney
+            ).createRoute()
+        )
     }
+
+    viewModel.updateEvent.collectLatest { jsonString ->
+        // 直接导航到 UpdateAppRelease
+        navController.navigate(UpdateAppRelease(jsonString).createRoute())
+    }
+}
     
     // 监听支付导航事件
     LaunchedEffect(Unit) {

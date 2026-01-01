@@ -255,9 +255,10 @@ object CreateAppRelease : AppDestination {
     override val route = "app_release_create"
 }
 
+// 修改 UpdateAppRelease 定义
 data class UpdateAppRelease(val appDetailJson: String) : AppDestination {
-    override val route = "app_release_update?json={${AppDestination.ARG_APP_DETAIL_JSON}}"
-    fun createRoute() = "app_release_update?json=${encode(appDetailJson)}"
+    override val route = "app_release_update/{${AppDestination.ARG_APP_DETAIL_JSON}}"
+    fun createRoute() = "app_release_update/${encode(appDetailJson)}"
 
     companion object {
         val arguments = listOf(
@@ -268,7 +269,6 @@ data class UpdateAppRelease(val appDetailJson: String) : AppDestination {
         )
     }
 }
-
 // --- 消息、账单、支付 ---
 
 object MessageCenter : AppDestination {
