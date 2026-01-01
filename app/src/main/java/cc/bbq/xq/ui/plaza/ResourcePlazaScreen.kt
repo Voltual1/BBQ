@@ -87,11 +87,27 @@ fun ResourcePlazaContent(
     val dialogShape = remember { RoundedCornerShape(4.dp) }
     val gridState = rememberLazyGridState()
     val focusRequester = remember { FocusRequester() }
+    
+    // 新增：控制商店菜单和分页控件的显示状态
+    var showTopAndBottomControls by rememberSaveable { mutableStateOf(true) }
+    var lastVisibleItemIndex by remember { mutableStateOf(gridState.firstVisibleItemIndex) }
 
     // 判断是否为查看特定用户资源的模式
     val isUserSpecificMode = remember(userId) { userId != null }
 
     val itemsToShow = if (isSearchMode) searchState else plazaState.popularApps
+
+    // 监听滚动位置变化，控制控件显示/隐藏
+    LaunchedEffect(gridState.firstVisibleItemIndex) {
+        if (gridState.firstVisibleItemIndex > lastVisibleItemIndex) {
+            // 向下滚动，隐藏控件
+            showTopAndBottomControls = false
+        } else if (gridState.firstVisibleItemIndex < lastVisibleItemIndex) {
+            // 向上滚动，显示控件
+            showTopAndBottomControls = true
+        }
+        lastVisibleItemIndex = gridState.firstVisibleItemIndex
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -124,9 +140,13 @@ fun ResourcePlazaContent(
             .fillMaxSize()
             .padding(horizontal = 8.dp)
     ) {
-        // 修正：仅在非“我的资源”模式 且 非“查看特定用户”模式 下显示商店切换菜单
-        if (!isMyResourceMode && !isUserSpecificMode) {
-            // 修改：使用过滤后的 AppStore 列表，同时过滤掉 LOCAL 和 SINE_OPEN_MARKET
+        // 修正：仅在非"我的资源"模式且非"查看特定用户"模式下显示商店切换菜单
+        // 添加滚动隐藏动画
+        AnimatedVisibility(
+            visible = showTopAndBottomControls && !isMyResourceMode && !isUserSpecificMode,
+            enter = slideInVertically(initialOffsetY = { -it }),
+            exit = slideOutVertically(targetOffsetY = { -it })
+        ) {
             AppStoreDropdownMenu(
                 selectedStore = selectedAppStore,
                 onStoreChange = { viewModel.setAppStore(it) },
@@ -135,7 +155,7 @@ fun ResourcePlazaContent(
             )
         }
 
-        // 修正：仅在非“我的资源”模式 且 非“查看特定用户”模式 下显示搜索框
+        // 修正：仅在非"我的资源"模式且非"查看特定用户"模式下显示搜索框
         if (!isMyResourceMode && !isUserSpecificMode) {
             OutlinedTextField(
                 value = searchQuery,
@@ -171,7 +191,7 @@ fun ResourcePlazaContent(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            // 修改：只有当 categories 不为空 且 非“查看特定用户”模式 时才显示 CategoryTabs
+            // 修改：只有当 categories 不为空且非"查看特定用户"模式时才显示 CategoryTabs
             if (categories.isNotEmpty() && !isUserSpecificMode) {
                 CategoryTabs(
                     categories = categories,
@@ -222,24 +242,31 @@ fun ResourcePlazaContent(
             }
         }
 
-        PaginationControls(
-            currentPage = currentPage,
-            totalPages = totalPages,
-            onPrevClick = { viewModel.prevPage() },
-            onNextClick = { viewModel.nextPage() },
-            onPageClick = { showPageDialog = true },
-            isPrevEnabled = currentPage > 1 && !isLoading,
-            isNextEnabled = currentPage < totalPages && !isLoading,
-            extraControls = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("自动翻页", style = MaterialTheme.typography.bodySmall)
-                    Switch(
-                        checked = autoScrollMode,
-                        onCheckedChange = { viewModel.setAutoScrollMode(it) }
-                    )
+        // 添加滚动隐藏动画到分页控件
+        AnimatedVisibility(
+            visible = showTopAndBottomControls,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
+        ) {
+            PaginationControls(
+                currentPage = currentPage,
+                totalPages = totalPages,
+                onPrevClick = { viewModel.prevPage() },
+                onNextClick = { viewModel.nextPage() },
+                onPageClick = { showPageDialog = true },
+                isPrevEnabled = currentPage > 1 && !isLoading,
+                isNextEnabled = currentPage < totalPages && !isLoading,
+                extraControls = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("自动翻页", style = MaterialTheme.typography.bodySmall)
+                        Switch(
+                            checked = autoScrollMode,
+                            onCheckedChange = { viewModel.setAutoScrollMode(it) }
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     if (showPageDialog) {

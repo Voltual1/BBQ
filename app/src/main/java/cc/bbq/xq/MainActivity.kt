@@ -408,7 +408,7 @@ fun getTitleForDestination(backStackEntry: NavBackStackEntry?): String {
         "app_detail" -> "应用详情"
         UpdateSettings.route -> "更新设置"
         Download.route -> "下载管理"
-        Update.route -> "应用更新"
+        Update.route -> "应用更新（未完工）"
         "my_comments" -> "我的评论"
         "my_reviews" -> "我的评价"
         else -> "BBQ"
