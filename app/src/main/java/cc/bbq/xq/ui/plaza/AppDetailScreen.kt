@@ -202,7 +202,7 @@ fun AppDetailScreen(
                             },
                             onDeleteAppClick = { showDeleteAppDialog = true },
                             onShareClick = { handleShare() },
-//                            onMoreMenuClick = { showMoreMenu = true },
+                            onMoreMenuClick = { showMoreMenu = true },
                             onImagePreview = { url -> navController.navigate(ImagePreview(url).createRoute()) }
                         )
                     }
