@@ -1,6 +1,8 @@
 // 文件路径: cc/bbq.xq.ui/plaza/AppDetailScreen.kt
 package cc.bbq.xq.ui.plaza
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -25,13 +27,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -47,7 +50,7 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import cc.bbq.xq.ui.Download // 确保导入 Download
+import cc.bbq.xq.ui.Download
 import cc.bbq.xq.AppStore
 import cc.bbq.xq.util.formatTimestamp
 import androidx.compose.foundation.pager.HorizontalPager
@@ -162,7 +165,14 @@ fun AppDetailScreen(
                         snackbarHostState.showSnackbar("已复制分享链接: $shareUrl")
                     }
                 }
-                else -> {
+                AppStore.SINE_OPEN_MARKET -> {
+                    // 弦开放市场：暂不支持分享
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("暂不支持该商店的分享功能")
+                    }
+                }
+                AppStore.LOCAL -> {
+                    // 本地商店：暂不支持分享
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("暂不支持该商店的分享功能")
                     }
@@ -273,6 +283,12 @@ fun AppDetailScreen(
                         // 弦应用商店：暂不显示删除（因为服务端不支持）
                         // 可以在这里添加弦应用商店特有的选项
                     }
+                    AppStore.SINE_OPEN_MARKET -> {
+                        // 弦开放市场：无特殊选项
+                    }
+                    AppStore.LOCAL -> {
+                        // 本地商店：无特殊选项
+                    }
                 }
             }
         }
@@ -362,8 +378,10 @@ fun AppDetailContent(
     comments: List<UnifiedComment>,
     onCommentReply: (UnifiedComment) -> Unit,
     onDownloadClick: () -> Unit,
-    onCommentLongClick: (String) -> Unit, // 修改参数名，更清晰
-    onDeleteAppClick: () -> Unit, // 修改参数名，区分删除应用和删除评论
+    onCommentLongClick: (String) -> Unit,
+    onDeleteAppClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onMoreMenuClick: () -> Unit,
     onImagePreview: (String) -> Unit
 ) {
     LazyColumn(
@@ -384,11 +402,17 @@ fun AppDetailContent(
                         )
                         Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(appDetail.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(
+                                appDetail.name, 
+                                style = MaterialTheme.typography.titleLarge, 
+                                fontWeight = FontWeight.Bold
+                            )
                             Text("版本: ${appDetail.versionName}", style = MaterialTheme.typography.bodyMedium)
-                            Text("大小: ${appDetail.size}", style = MaterialTheme.typography.bodyMedium)
+                            Text("大小: ${appDetail.size ?: "未知"}", style = MaterialTheme.typography.bodyMedium)
                         }
-                        IconButton(onClick = onDeleteAppClick) {
+                        
+                        // 更多菜单按钮
+                        IconButton(onClick = onMoreMenuClick) {
                             Icon(Icons.Default.MoreVert, "更多")
                         }
                     }
@@ -545,8 +569,8 @@ fun AppDetailContent(
                                 )
                             }
                         }
-                        else -> {
-                            // 其他商店的通用信息
+                        AppStore.SINE_OPEN_MARKET -> {
+                            // 弦开放市场信息
                             InfoRow(
                                 label = "应用类型",
                                 value = appDetail.type
@@ -561,10 +585,19 @@ fun AppDetailContent(
                                 label = "下载次数",
                                 value = "${appDetail.downloadCount} 次"
                             )
+                        }
+                        AppStore.LOCAL -> {
+                            // 本地商店信息
                             InfoRow(
-                                label = "上传时间",
-                                value = appDetail.uploadTime.toString()
+                                label = "应用类型",
+                                value = appDetail.type
                             )
+                            if (appDetail.size != null) {
+                                InfoRow(
+                                    label = "安装包大小",
+                                    value = appDetail.size
+                                )
+                            }
                         }
                     }
                 }
@@ -633,14 +666,14 @@ fun AppDetailContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 AsyncImage(
-    model = ImageRequest.Builder(LocalContext.current)
-        .data(raw?.user?.userAvatar ?: "https://static.sineshop.xin/images/user_avatar/default_avatar.png")
-        .diskCachePolicy(CachePolicy.DISABLED) // 禁用磁盘缓存
-        .build(),
-    contentDescription = "上传者头像",
-    modifier = Modifier.size(40.dp).clip(CircleShape),
-    contentScale = ContentScale.Crop
-)
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(raw?.user?.userAvatar ?: "https://static.sineshop.xin/images/user_avatar/default_avatar.png")
+                                        .diskCachePolicy(CachePolicy.DISABLED) // 禁用磁盘缓存
+                                        .build(),
+                                    contentDescription = "上传者头像",
+                                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
                                 Spacer(Modifier.width(16.dp))
                                 Column {
                                     Text(raw?.user?.displayName ?: "未知上传者", style = MaterialTheme.typography.titleMedium)
@@ -663,14 +696,14 @@ fun AppDetailContent(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     AsyncImage(
-    model = ImageRequest.Builder(LocalContext.current)
-        .data(raw.audit_user?.userAvatar ?: "https://static.sineshop.xin/images/user_avatar/default_avatar.png")
-        .diskCachePolicy(CachePolicy.DISABLED) // 禁用磁盘缓存
-        .build(),
-    contentDescription = "审核员头像",
-    modifier = Modifier.size(40.dp).clip(CircleShape),
-    contentScale = ContentScale.Crop
-)
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(raw.audit_user?.userAvatar ?: "https://static.sineshop.xin/images/user_avatar/default_avatar.png")
+                                            .diskCachePolicy(CachePolicy.DISABLED) // 禁用磁盘缓存
+                                            .build(),
+                                        contentDescription = "审核员头像",
+                                        modifier = Modifier.size(40.dp).clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
                                     Spacer(Modifier.width(16.dp))
                                     Column {
                                         Text(raw.audit_user?.displayName ?: "未知审核员", style = MaterialTheme.typography.titleMedium)
@@ -679,8 +712,56 @@ fun AppDetailContent(
                                 }
                             }
                         }
-                        else -> {
-                            // 其他商店（如小趣空间）只显示上传者
+                        AppStore.XIAOQU_SPACE -> {
+                            // 小趣空间只显示上传者
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .clickable {
+                                        val userId = appDetail.user.id.toLongOrNull()
+                                        if (userId != null) {
+                                            navController.navigate(UserDetail(userId, appDetail.store).createRoute())
+                                        }
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = appDetail.user.avatarUrl,
+                                    contentDescription = "上传者头像",
+                                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(Modifier.width(16.dp))
+                                Text(appDetail.user.displayName, style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
+                        AppStore.SINE_OPEN_MARKET -> {
+                            // 弦开放市场只显示上传者
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .clickable {
+                                        val userId = appDetail.user.id.toLongOrNull()
+                                        if (userId != null) {
+                                            navController.navigate(UserDetail(userId, appDetail.store).createRoute())
+                                        }
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = appDetail.user.avatarUrl,
+                                    contentDescription = "上传者头像",
+                                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(Modifier.width(16.dp))
+                                Text(appDetail.user.displayName, style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
+                        AppStore.LOCAL -> {
+                            // 本地商店只显示上传者
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -768,7 +849,7 @@ fun getDeviceInfo(minSdk: Int?): String {
     val deviceSdk = android.os.Build.VERSION.SDK_INT
     
     return buildString {
-        append("设备: Android $deviceSdk")
+        append("设备:  $deviceSdk")
         if (minSdk != null && deviceSdk >= minSdk) {
             append(" • 兼容")
         } else {

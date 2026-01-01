@@ -143,20 +143,6 @@ class AppDetailComposeViewModel(
             false
         }
     }
-    
-    // 删除应用（无需鉴权，服务器会处理）
-    fun deleteApp(onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            // 直接调用仓库的删除方法，服务器会自行鉴权
-            val result = repository.deleteApp(currentAppId, currentVersionId)
-            if (result.isSuccess) {
-                onSuccess()
-            } else {
-                val error = result.exceptionOrNull()?.message ?: "删除失败"
-                _snackbarEvent.tryEmit(error)
-            }
-        }
-    }
 
     fun refresh() {
         loadData()
@@ -283,13 +269,16 @@ class AppDetailComposeViewModel(
         }
     }
 
+    // 删除应用（无需鉴权，服务器会处理）
     fun deleteApp(onSuccess: () -> Unit) {
         viewModelScope.launch {
+            // 直接调用仓库的删除方法，服务器会自行鉴权
             val result = repository.deleteApp(currentAppId, currentVersionId)
             if (result.isSuccess) {
                 onSuccess()
             } else {
-                _errorMessage.value = "删除应用失败: ${result.exceptionOrNull()?.message}"
+                val error = result.exceptionOrNull()?.message ?: "删除失败"
+                _errorMessage.value = error
             }
         }
     }
