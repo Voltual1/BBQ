@@ -229,7 +229,7 @@ class DownloadService : Service() {
                     else -> {
                         // 下载中，保持前台服务
                         if (status is DownloadStatus.Downloading || status is DownloadStatus.Pending) {
-                            ensureForegroundService(fileName)
+//                            ensureForegroundService(fileName)
                         }
                     }
                 }
@@ -237,16 +237,17 @@ class DownloadService : Service() {
             .launchIn(serviceScope)
     }
 
-    /**
-     * 确保服务在前台运行
-     */
+    /*
+     // 确保服务在前台运行
+     
     private fun ensureForegroundService(fileName: String) {
         val status = downloader.status.value
         if (status is DownloadStatus.Downloading || status is DownloadStatus.Pending) {
-//            val notification = buildNotification(status, fileName)
+            val notification = buildNotification(status, fileName)
             startForeground(NOTIFICATION_ID, notification)
         }
     }
+    */
 
     /*
      // 创建通知渠道（Android O+）
