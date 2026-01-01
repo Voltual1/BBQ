@@ -114,6 +114,13 @@ fun AppDetailScreen(
             snackbarHostState.showSnackbar(message)
         }
     }
+    // 监听更新事件
+    LaunchedEffect(viewModel.snackbarEvent) {
+            viewModel.updateEvent.collectLatest { jsonString ->
+        // 直接导航到 UpdateAppRelease
+        navController.navigate(UpdateAppRelease(jsonString).createRoute())
+    }
+}
     
     // 监听退款和更新事件
 LaunchedEffect(Unit) {
@@ -127,12 +134,6 @@ LaunchedEffect(Unit) {
             ).createRoute()
         )
     }
-
-    viewModel.updateEvent.collectLatest { jsonString ->
-        // 直接导航到 UpdateAppRelease
-        navController.navigate(UpdateAppRelease(jsonString).createRoute())
-    }
-}
     
     // 监听支付导航事件
     LaunchedEffect(Unit) {
