@@ -12,7 +12,7 @@ import android.content.Context
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +37,7 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 // 关键：导入 FileActionUtil
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
-import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -170,12 +170,12 @@ fun DownloadTaskItem(
         else -> DownloadStatus.Idle
     }
 
-    // 使用Modifier添加长按点击事件
+    // 使用Modifier添加长按点击事件 - 使用 combinedClickable 替代 clickable
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable(
+            .combinedClickable(
                 onClick = { 
                     // 普通点击：根据状态执行相应操作
                     when (status) {
@@ -188,8 +188,9 @@ fun DownloadTaskItem(
                         }
                     }
                 },
-                indication = null, // 移除默认的水波纹效果
-                onLongClick = onLongClick
+                onLongClick = onLongClick,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
             )
     ) {
         when (status) {
