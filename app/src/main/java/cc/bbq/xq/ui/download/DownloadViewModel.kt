@@ -36,7 +36,7 @@ class DownloadViewModel(
     private var isBound = false
 
     // 使用 DownloadTaskRepository
-    private val downloadTaskRepository: DownloadTaskRepository
+
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
