@@ -50,14 +50,6 @@ fun DownloadScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 如果有活跃的下载任务，在顶部显示状态卡片
-            if (hasActiveTask) {
-                ActiveDownloadStatus(
-                    status = status,
-                    onCancel = { viewModel.cancelDownload() }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
             // 下载任务列表
             if (downloadTasks.isEmpty()) {
@@ -70,24 +62,6 @@ fun DownloadScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun ActiveDownloadStatus(
-    status: DownloadStatus,
-    onCancel: () -> Unit
-) {
-    when (status) {
-        is DownloadStatus.Pending -> PendingDownloadState()
-        is DownloadStatus.Downloading -> DownloadingState(
-            status = status,
-            onCancel = onCancel
-        )
-        is DownloadStatus.Paused -> PausedState(status)
-        is DownloadStatus.Success -> SuccessState(status) { /* 成功状态可以没有操作 */ }
-        is DownloadStatus.Error -> ErrorState(status)
-        else -> {} // 空闲状态不显示
     }
 }
 
