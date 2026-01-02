@@ -14,62 +14,201 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import org.koin.core.annotation.Single
 import kotlinx.coroutines.flow.map
+import org.koin.core.annotation.Single
 
 // DataStore 实例
 val Context.userFilterDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_filter")
 
 /**
- * 用于存储用户筛选信息的 DataStore
+ * 用于存储多个用户筛选信息的 DataStore
+ * 
+ * 数据结构：
+ * - 使用 SET 存储用户ID列表
+ * - 每个用户ID对应一个昵称键值对
+ * - 维护激活状态的用户ID
  */
 @Single
 class UserFilterDataStore(private val context: Context) {
     
     companion object {
-        private val FILTER_USER_ID = longPreferencesKey("filter_user_id")
-        private val FILTER_NICKNAME = stringPreferencesKey("filter_nickname")
+        // 存储所有用户ID的集合
+        private val FILTER_USER_IDS_SET = stringSetPreferencesKey("filter_user_ids_set")
+        
+        // 用户昵称键前缀
+        private const val NICKNAME_KEY_PREFIX = "filter_nickname_"
+        
+        // 激活状态的用户ID
+        private val ACTIVE_FILTER_USER_ID = longPreferencesKey("active_filter_user_id")
+        
+        // 是否激活筛选
         private val IS_FILTER_ACTIVE = booleanPreferencesKey("is_filter_active")
-    }
-    
-    /**
-     * 设置用户筛选信息
-     */
-    suspend fun setUserFilter(userId: Long, nickname: String) {
-        context.userFilterDataStore.edit { preferences ->
-            preferences[FILTER_USER_ID] = userId
-            preferences[FILTER_NICKNAME] = nickname
-            preferences[IS_FILTER_ACTIVE] = true
+        
+        // 生成用户昵称的键
+        private fun getNicknameKey(userId: Long): Preferences.Key<String> {
+            return stringPreferencesKey("$NICKNAME_KEY_PREFIX$userId")
         }
     }
     
     /**
-     * 清除用户筛选信息
+     * 添加或更新用户筛选信息
      */
-    suspend fun clearUserFilter() {
+    suspend fun addOrUpdateUserFilter(userId: Long, nickname: String) {
         context.userFilterDataStore.edit { preferences ->
-            preferences.remove(FILTER_USER_ID)
-            preferences.remove(FILTER_NICKNAME)
+            // 获取现有的用户ID集合
+            val existingUserIds = preferences[FILTER_USER_IDS_SET]?.toMutableSet() ?: mutableSetOf()
+            
+            // 添加新用户ID到集合
+            existingUserIds.add(userId.toString())
+            preferences[FILTER_USER_IDS_SET] = existingUserIds
+            
+            // 存储用户昵称
+            preferences[getNicknameKey(userId)] = nickname
+            
+            // 如果当前没有激活的筛选，则将此用户设为激活
+            val currentActiveUserId = preferences[ACTIVE_FILTER_USER_ID]
+            if (currentActiveUserId == null) {
+                preferences[ACTIVE_FILTER_USER_ID] = userId
+                preferences[IS_FILTER_ACTIVE] = true
+            }
+        }
+    }
+    
+    /**
+     * 移除用户筛选信息
+     */
+    suspend fun removeUserFilter(userId: Long) {
+        context.userFilterDataStore.edit { preferences ->
+            // 获取现有的用户ID集合
+            val existingUserIds = preferences[FILTER_USER_IDS_SET]?.toMutableSet() ?: mutableSetOf()
+            
+            // 从集合中移除用户ID
+            existingUserIds.remove(userId.toString())
+            preferences[FILTER_USER_IDS_SET] = existingUserIds
+            
+            // 移除用户昵称
+            preferences.remove(getNicknameKey(userId))
+            
+            // 如果移除的是当前激活的用户
+            val currentActiveUserId = preferences[ACTIVE_FILTER_USER_ID]
+            if (currentActiveUserId == userId) {
+                // 尝试设置另一个用户为激活状态
+                val nextUserId = existingUserIds.firstOrNull()?.toLongOrNull()
+                preferences[ACTIVE_FILTER_USER_ID] = nextUserId ?: 0L
+                preferences[IS_FILTER_ACTIVE] = nextUserId != null
+            }
+        }
+    }
+    
+    /**
+     * 设置激活的用户筛选
+     */
+    suspend fun setActiveUserFilter(userId: Long?) {
+        context.userFilterDataStore.edit { preferences ->
+            if (userId != null) {
+                // 检查用户是否存在
+                val existingUserIds = preferences[FILTER_USER_IDS_SET] ?: setOf()
+                if (existingUserIds.contains(userId.toString())) {
+                    preferences[ACTIVE_FILTER_USER_ID] = userId
+                    preferences[IS_FILTER_ACTIVE] = true
+                }
+            } else {
+                // 清除激活状态
+                preferences[ACTIVE_FILTER_USER_ID] = 0L
+                preferences[IS_FILTER_ACTIVE] = false
+            }
+        }
+    }
+    
+    /**
+     * 清除所有用户筛选信息
+     */
+    suspend fun clearAllUserFilters() {
+        context.userFilterDataStore.edit { preferences ->
+            // 获取所有用户ID以便清除对应的昵称
+            val existingUserIds = preferences[FILTER_USER_IDS_SET] ?: setOf()
+            
+            // 清除所有用户昵称
+            existingUserIds.forEach { userIdStr ->
+                userIdStr.toLongOrNull()?.let { userId ->
+                    preferences.remove(getNicknameKey(userId))
+                }
+            }
+            
+            // 清除用户ID集合
+            preferences.remove(FILTER_USER_IDS_SET)
+            
+            // 清除激活状态
+            preferences.remove(ACTIVE_FILTER_USER_ID)
             preferences[IS_FILTER_ACTIVE] = false
         }
     }
     
     /**
-     * 获取当前筛选的用户ID
+     * 获取所有用户ID
      */
-    val userIdFlow: Flow<Long?> = context.userFilterDataStore.data
+    val userIdsFlow: Flow<Set<Long>> = context.userFilterDataStore.data
         .map { preferences ->
-            preferences[FILTER_USER_ID]
+            preferences[FILTER_USER_IDS_SET]?.mapNotNull { it.toLongOrNull() }?.toSet() ?: emptySet()
         }
     
     /**
-     * 获取当前筛选的用户昵称
+     * 获取所有用户筛选信息（用户ID和昵称对）
      */
-    val nicknameFlow: Flow<String?> = context.userFilterDataStore.data
+    val allUserFiltersFlow: Flow<Map<Long, String>> = context.userFilterDataStore.data
         .map { preferences ->
-            preferences[FILTER_NICKNAME]
+            val userIds = preferences[FILTER_USER_IDS_SET] ?: emptySet()
+            val result = mutableMapOf<Long, String>()
+            
+            userIds.forEach { userIdStr ->
+                userIdStr.toLongOrNull()?.let { userId ->
+                    val nickname = preferences[getNicknameKey(userId)]
+                    if (nickname != null) {
+                        result[userId] = nickname
+                    }
+                }
+            }
+            
+            result
+        }
+    
+    /**
+     * 获取当前激活的用户ID
+     */
+    val activeUserIdFlow: Flow<Long?> = context.userFilterDataStore.data
+        .map { preferences ->
+            val activeUserId = preferences[ACTIVE_FILTER_USER_ID]
+            if (activeUserId != null && activeUserId != 0L) activeUserId else null
+        }
+    
+    /**
+     * 获取当前激活的用户昵称
+     */
+    val activeNicknameFlow: Flow<String?> = context.userFilterDataStore.data
+        .map { preferences ->
+            val activeUserId = preferences[ACTIVE_FILTER_USER_ID]
+            if (activeUserId != null && activeUserId != 0L) {
+                preferences[getNicknameKey(activeUserId)]
+            } else {
+                null
+            }
+        }
+    
+    /**
+     * 获取当前激活的完整用户筛选信息
+     */
+    val activeUserFilterFlow: Flow<Pair<Long?, String?>> = context.userFilterDataStore.data
+        .map { preferences ->
+            val activeUserId = preferences[ACTIVE_FILTER_USER_ID]
+            if (activeUserId != null && activeUserId != 0L) {
+                val nickname = preferences[getNicknameKey(activeUserId)]
+                Pair(activeUserId, nickname)
+            } else {
+                Pair(null, null)
+            }
         }
     
     /**
@@ -81,12 +220,31 @@ class UserFilterDataStore(private val context: Context) {
         }
     
     /**
-     * 获取完整的筛选信息
+     * 检查指定用户是否存在
      */
-    val userFilterFlow: Flow<Pair<Long?, String?>> = context.userFilterDataStore.data
-        .map { preferences ->
-            val userId = preferences[FILTER_USER_ID]
-            val nickname = preferences[FILTER_NICKNAME]
-            Pair(userId, nickname)
+    suspend fun hasUserFilter(userId: Long): Boolean {
+        val preferences = context.userFilterDataStore.data.map {
+            it[FILTER_USER_IDS_SET]?.contains(userId.toString()) ?: false
         }
+        // 注意：这里简化处理，实际使用可能需要更复杂的协程处理
+        return kotlin.runCatching { 
+            kotlinx.coroutines.runBlocking { 
+                preferences.first() 
+            } 
+        }.getOrDefault(false)
+    }
+    
+    /**
+     * 获取指定用户的昵称
+     */
+    suspend fun getNickname(userId: Long): String? {
+        val preferences = context.userFilterDataStore.data.map {
+            it[getNicknameKey(userId)]
+        }
+        return kotlin.runCatching {
+            kotlinx.coroutines.runBlocking {
+                preferences.first()
+            }
+        }.getOrNull()
+    }
 }
