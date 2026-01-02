@@ -46,7 +46,7 @@ fun SignInSettingsScreen(
                     viewModel.setAutoSignIn(checked)
                     if (checked) {
                         // 如果开启自动签到，立即执行一次签到
-                        viewModel.performAutoSignIn { success, message ->
+                        //TODO
                             scope.launch {
                                 snackbarHostState.showSnackbar(message)
                             }
