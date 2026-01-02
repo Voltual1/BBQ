@@ -223,28 +223,16 @@ class UserFilterDataStore(private val context: Context) {
      * 检查指定用户是否存在
      */
     suspend fun hasUserFilter(userId: Long): Boolean {
-        val preferences = context.userFilterDataStore.data.map {
-            it[FILTER_USER_IDS_SET]?.contains(userId.toString()) ?: false
-        }
-        // 注意：这里简化处理，实际使用可能需要更复杂的协程处理
-        return kotlin.runCatching { 
-            kotlinx.coroutines.runBlocking { 
-                preferences.first() 
-            } 
-        }.getOrDefault(false)
+        val preferences = context.userFilterDataStore.data.first()
+        val userIdsSet = preferences[FILTER_USER_IDS_SET]
+        return userIdsSet?.contains(userId.toString()) ?: false
     }
     
     /**
      * 获取指定用户的昵称
      */
     suspend fun getNickname(userId: Long): String? {
-        val preferences = context.userFilterDataStore.data.map {
-            it[getNicknameKey(userId)]
-        }
-        return kotlin.runCatching {
-            kotlinx.coroutines.runBlocking {
-                preferences.first()
-            }
-        }.getOrNull()
+        val preferences = context.userFilterDataStore.data.first()
+        return preferences[getNicknameKey(userId)]
     }
 }

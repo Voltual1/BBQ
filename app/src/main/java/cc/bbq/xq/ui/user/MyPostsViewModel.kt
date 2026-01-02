@@ -54,9 +54,11 @@ class MyPostsViewModel(private val userFilterDataStore: UserFilterDataStore) : V
             _isInitialized = false
             resetState()
             
-            // 将用户筛选信息存储到 DataStore
+            // 将用户筛选信息存储到 DataStore - 修复这里的方法名
             viewModelScope.launch {
-                userFilterDataStore.setUserFilter(userId, nickname)
+                userFilterDataStore.addOrUpdateUserFilter(userId, nickname)
+                // 同时设置为激活用户
+                userFilterDataStore.setActiveUserFilter(userId)
             }
             
             loadDataIfNeeded()
