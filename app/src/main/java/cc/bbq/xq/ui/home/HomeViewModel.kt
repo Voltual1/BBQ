@@ -50,6 +50,7 @@ data class HomeUiState(
     val followersCount: String = "?",
     val fansCount: String = "?",
     val postsCount: String = "?",
+    val signToday: Boolean = false, // 添加今日签到状态
     val likesCount: String = "?",
     // 签到相关状态
     val seriesDays: Int = 0,
@@ -117,6 +118,13 @@ class HomeViewModel : ViewModel() {
                             userData.create_time,
                             userData.signlasttime
                         )
+                        
+                        // 根据 sign_today 字段设置签到状态消息
+                val signStatusMessage = if (!userData.sign_today) {
+                    "今天还没有签到"
+                } else {
+                    null // 已签到则显示 null，会显示默认文案
+                }
 
                         uiState.value = uiState.value.copy(
                             showLoginPrompt = false,
@@ -135,6 +143,8 @@ class HomeViewModel : ViewModel() {
                             displayDaysDiff = daysDiff,
                             isLoading = false,
                             exp = userData.exp,
+                            signToday = userData.sign_today, // 更新签到状态
+                    signStatusMessage = signStatusMessage, // 设置签到状态消息
                             dataLoadState = DataLoadState.Loaded
                         )
                     }
@@ -239,6 +249,7 @@ class HomeViewModel : ViewModel() {
                         uiState.value = uiState.value.copy(
                             signStatusMessage = "登录已过期，请长按头像刷新",
                             showLoginPrompt = true,
+                            signToday = true, // 标记为已签到
                             isLoading = false
                         )
                         // 重置加载状态，因为登录已过期

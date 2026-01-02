@@ -266,23 +266,24 @@ val httpClient = HttpClient(OkHttp) {
         val timestamp: Long
     )
 
-    @kotlinx.serialization.Serializable
-    data class UserData(
-        val id: Long,
-        val username: String,
-        val usertx: String,
-        val nickname: String,
-        val hierarchy: String,
-        val money: Int,
-        val followerscount: String,
-        val fanscount: String,
-        val postcount: String,
-        val likecount: String,
-        val exp: Int,
-        val create_time: String = "",
-        val signlasttime: String = "",
-        val series_days: Int = 0
-    )
+@kotlinx.serialization.Serializable
+data class UserData(
+    val id: Long,
+    val username: String,
+    val usertx: String,
+    val nickname: String,
+    val hierarchy: String,
+    val money: Int,
+    val followerscount: String,
+    val fanscount: String,
+    val postcount: String,
+    val likecount: String,
+    val exp: Int,
+    val create_time: String = "",
+    val signlasttime: String = "",
+    val series_days: Int = 0,
+    val sign_today: Boolean = false  // 添加签今日是否签到字段
+)
 
     // 应用列表模型
     @kotlinx.serialization.Serializable
