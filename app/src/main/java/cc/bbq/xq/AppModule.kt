@@ -4,6 +4,7 @@ package cc.bbq.xq
 import cc.bbq.xq.data.repository.IAppStoreRepository
 import cc.bbq.xq.data.repository.SineShopRepository
 import cc.bbq.xq.data.repository.XiaoQuRepository
+import cc.bbq.xq.data.db.DownloadTaskRepository
 import cc.bbq.xq.ui.auth.LoginViewModel
 import cc.bbq.xq.ui.billing.BillingViewModel
 import cc.bbq.xq.ui.community.CommunityViewModel
@@ -33,6 +34,7 @@ import cc.bbq.xq.ui.community.BrowseHistoryViewModel
 import cc.bbq.xq.ui.community.PostDetailViewModel
 import cc.bbq.xq.ui.rank.RankingListViewModel
 import cc.bbq.xq.ui.settings.update.UpdateSettingsViewModel
+import cc.bbq.xq.ui.download.DownloadViewModel
 import cc.bbq.xq.ui.home.HomeViewModel
 import cc.bbq.xq.ui.plaza.VersionListViewModel
 import cc.bbq.xq.ui.user.MyCommentsViewModel
@@ -59,7 +61,6 @@ val appModule = module {
     
     viewModel { PlayerViewModel(androidApplication()) }
     
-    // 取消注释并修复 SearchViewModel
     viewModel { SearchViewModel(get()) }
     
     viewModel { UserListViewModel(androidApplication()) }
@@ -75,6 +76,7 @@ val appModule = module {
     viewModel { UpdateSettingsViewModel() }
     viewModel { HomeViewModel() }
     viewModel { VersionListViewModel(androidApplication(), get<SineShopRepository>()) }
+    viewModel { DownloadViewModel(androidApplication(), get<DownloadTaskRepository>()) }
     viewModel { MyCommentsViewModel(androidApplication(), get()) }
     viewModel { MyReviewsViewModel(androidApplication(), get()) }
 
@@ -87,6 +89,7 @@ val appModule = module {
     // Repositories
     single { XiaoQuRepository(KtorClient.ApiServiceImpl) }
     single { SineShopRepository() }
+    single { DownloadTaskRepository(get()) } 
     single<Map<AppStore, IAppStoreRepository>> {
         mapOf(
             AppStore.XIAOQU_SPACE to get<XiaoQuRepository>(),
