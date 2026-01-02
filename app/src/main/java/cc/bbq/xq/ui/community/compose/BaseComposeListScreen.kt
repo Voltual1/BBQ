@@ -29,7 +29,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cc.bbq.xq.R
-import cc.bbq.xq.ui.*
 import cc.bbq.xq.KtorClient
 import cc.bbq.xq.ui.community.ListScreen
 import cc.bbq.xq.AuthManager // 添加 AuthManager 导入
@@ -177,34 +176,30 @@ fun BaseComposeListScreen(
                                     onNavigate("my_likes")
                                 }
                             )
-                            // /app/src/main/java/cc/bbq/xq/ui/community/compose/BaseComposeListScreen.kt
-// 在 DropdownMenu 中修复"我的帖子"导航
-DropdownMenuItem(
-    text = { Text("我的帖子") },
-    onClick = {
-        expanded = false
-        // 在协程中获取 currentUserId
-        scope.launch {
-            // 使用 first() 获取 Flow 的当前值
-            val currentUserId = AuthManager.getUserId(context).first()
-            // 检查用户ID是否有效
-            if (currentUserId > 0) {
-                // 获取用户昵称用于路由创建
-                val nickname = "我" // 或者从其他地方获取昵称
-                val route = MyPosts(currentUserId, nickname).createRoute()
-                // 确保传递 nickname 参数
-                navController.navigate(route)
-            } else {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.login_first),
-                        duration = SnackbarDuration.Short
-                    )
-                }
-            }
-        }
-    }
-)
+                            DropdownMenuItem(
+                                text = { Text("我的帖子") },
+                                onClick = {
+                                    expanded = false
+                                    // 在协程中获取 currentUserId
+                                    scope.launch {
+                                        // 使用 first() 获取 Flow 的当前值
+                                        val currentUserId = AuthManager.getUserId(context).first()
+                                        //  fixed: remove unnecessary non-null check. The type of `currentUserId` is Long, so it can't be null.
+                                        //  Also, it's better to check if the user id is valid (e.g., greater than 0)
+                                        if (currentUserId > 0) {
+                                            onNavigate("my_posts/$currentUserId")
+                                        } else {
+                                             scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    message = context.getString(R.string.login_first),
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                            }
+                                            //android.widget.Toast.makeText(context, "请先登录", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            )
                         }
                     }
                 },

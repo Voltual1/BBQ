@@ -526,24 +526,29 @@ var showMoreMenu by remember { mutableStateOf(false) }
         }
 
         // --- 适配说明（小趣空间） ---
-        if (appDetail.store == AppStore.XIAOQU_SPACE) {
-            val appExplain = when (val raw = appDetail.raw) {
-                is cc.bbq.xq.KtorClient.AppDetail -> raw.app_explain
-                else -> null
-            }
-            
-            if (!appExplain.isNullOrEmpty()) {
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("适配说明", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(8.dp))
-                            Text(appExplain)
-                        }
-                    }
+if (appDetail.store == AppStore.XIAOQU_SPACE) {
+    val appExplain = when (val raw = appDetail.raw) {
+        is cc.bbq.xq.KtorClient.AppDetail -> raw.app_explain
+        else -> null
+    }
+    
+    if (!appExplain.isNullOrEmpty()) {
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("适配说明", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    LinkifyText(
+                        text = appExplain,
+                        navController = navController,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
+                    )
                 }
             }
         }
+    }
+}
 
         // --- 应用信息卡片 ---
         item {
