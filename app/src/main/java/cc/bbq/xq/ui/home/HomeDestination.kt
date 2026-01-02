@@ -136,7 +136,7 @@ fun HomeDestination(
             onSettingsClick = { navController.navigate(ThemeCustomize.route) },
             onSignClick = { viewModel.signIn(context) },
             onAboutClick = { navController.navigate(About.route) },
-            onAccountProfileClick = { navController.navigate(AccountProfile.createRoute(AppStore.SIENE_SHOP)) },
+            onAccountProfileClick = { navController.navigate(AccountProfile.createRoute(AppStore.XIAOQU_SPACE)) },
             onRecalculateDays = { viewModel.recalculateDaysDiff() },
             onNavigateToUpdate = { navController.navigate(Update.route) }, // 传递导航回调
             onNavigateToMyReviews = { navController.navigate(MyReviews.route) }, // 新增：传递导航回调
