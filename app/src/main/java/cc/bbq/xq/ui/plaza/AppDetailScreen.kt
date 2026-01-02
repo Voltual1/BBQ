@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import cc.bbq.xq.ui.compose.LinkifyText
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -692,7 +693,7 @@ var showMoreMenu by remember { mutableStateOf(false) }
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("应用介绍", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text(appDetail.description ?: "暂无介绍")
+                    LinkifyText(appDetail.description ?: "暂无介绍")
                 }
             }
         }
@@ -873,7 +874,7 @@ var showMoreMenu by remember { mutableStateOf(false) }
 
         // --- 评论列表 ---
         item {
-            Text("评论 (${appDetail.reviewCount})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            LinkifyText("评论 (${appDetail.reviewCount})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
 
         if (comments.isEmpty()) {
