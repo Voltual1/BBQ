@@ -34,7 +34,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun DownloadScreen(
     modifier: Modifier = Modifier,
-    val viewModel: DownloadViewModel = koinViewModel()
+    viewModel: DownloadViewModel = koinViewModel()
 ) {
     val status by viewModel.downloadStatus.collectAsState()
     // 从 ViewModel 获取所有下载任务
