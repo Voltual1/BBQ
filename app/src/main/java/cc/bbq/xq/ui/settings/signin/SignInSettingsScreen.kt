@@ -30,23 +30,7 @@ fun SignInSettingsScreen(
     
     // 状态用于显示额外信息
     var signInStatus by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    
-    // 检查签到状态（只在首次加载时）
-    LaunchedEffect(Unit) {
-        viewModel.checkSignInStatus { isSignedIn, message ->
-            signInStatus = if (isSignedIn) {
-                "今日已签到"
-            } else {
-                "今日未签到"
-            }
-            message?.let {
-                scope.launch {
-                    snackbarHostState.showSnackbar(it)
-                }
-            }
-        }
-    }
+    var isLoading by remember { mutableStateOf(false) }    
     
     Column(
         modifier = Modifier
@@ -71,96 +55,9 @@ fun SignInSettingsScreen(
                 }
             },
             modifier = Modifier.fillMaxWidth()
-        )
+        )        
         
-        // 开关下方的说明文本
-        Text(
-            text = if (autoSignIn) {
-                "自动签到已开启，每日将自动为您签到"
-            } else {
-                "自动签到已关闭，需手动签到"
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp, start = 16.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))        
         
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // 显示签到状态
-        signInStatus?.let { status ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = "签到状态",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = status,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 手动签到按钮
-        Button(
-            onClick = {
-                if (!isLoading) {
-                    isLoading = true
-                    viewModel.performAutoSignIn { success, message ->
-                        scope.launch {
-                            snackbarHostState.showSnackbar(message)
-                            if (success) {
-                                signInStatus = "今日已签到"
-                            }
-                            isLoading = false
-                        }
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("签到中...")
-            } else {
-                Text("立即签到")
-            }
-        }
-        
-        // 按钮下方提示
-        Text(
-            text = "手动签到每日只能进行一次",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .align(Alignment.CenterHorizontally)
-        )
     }
 }

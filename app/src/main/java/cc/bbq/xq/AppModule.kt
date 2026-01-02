@@ -23,6 +23,7 @@ import cc.bbq.xq.ui.community.PostCreateViewModel
 import cc.bbq.xq.ui.plaza.AppReleaseViewModel
 import cc.bbq.xq.ui.plaza.PlazaViewModel
 import cc.bbq.xq.ui.player.PlayerViewModel
+import cc.bbq.xq.ui.settings.signin.SignInSettingsViewModel
 import cc.bbq.xq.ui.search.SearchViewModel
 import cc.bbq.xq.ui.user.MyPostsViewModel
 import cc.bbq.xq.ui.user.UserDetailViewModel
@@ -75,6 +76,7 @@ val appModule = module {
     viewModel { PostDetailViewModel(androidApplication()) }
     viewModel { RankingListViewModel() }
     viewModel { UpdateSettingsViewModel() }
+    viewModel { SignInSettingsViewModel() }
     viewModel { HomeViewModel() }
     viewModel { VersionListViewModel(androidApplication(), get<SineShopRepository>()) }
     viewModel { DownloadViewModel(androidApplication(), get<DownloadTaskRepository>()) }

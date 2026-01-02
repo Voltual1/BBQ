@@ -24,27 +24,4 @@ class SignInSettingsViewModel : ViewModel() {
         SignInSettingsDataStore.setAutoSignIn(value)
     }
     
-    // 可以添加一些签到相关的业务逻辑，比如执行签到操作
-    fun performAutoSignIn(callback: (Boolean, String) -> Unit) {
-        // TODO: 这里实现实际的自动签到逻辑
-        // 例如调用API进行签到
-        viewModelScope.launch {
-            try {
-                // 模拟签到操作
-                // val result = signInRepository.performSignIn()
-                // callback(result.success, result.message)
-                
-                // 临时返回成功
-                callback(true, "自动签到成功")
-            } catch (e: Exception) {
-                callback(false, "自动签到失败: ${e.message}")
-            }
-        }
-    }
-    
-    // 检查是否已经签到
-    fun checkSignInStatus(callback: (Boolean, String?) -> Unit) {
-        // TODO: 实现检查签到状态的逻辑
-        callback(false, null) // 默认返回未签到
-    }
 }

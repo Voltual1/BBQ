@@ -213,7 +213,7 @@ object AccountProfileArgs {
 }
 
 object SignInSettings : AppDestination {
-    override val route = "signInSettings"
+    override val route = "signin_settings"
 }
 
 // --- 资源广场与应用 ---
