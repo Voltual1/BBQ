@@ -20,9 +20,6 @@ android {
         multiDexEnabled = true
         buildConfigField("String", "LICENSE", "\"GPLv3\"")
         resourceConfigurations += listOf("zh")
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
 
     splits {
@@ -99,7 +96,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
     implementation("androidx.navigation:navigation-compose:2.9.6")
-   // implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material")
 
     // ===== 图片加载方案 =====
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
@@ -136,7 +133,7 @@ ksp("io.insert-koin:koin-ksp-compiler:$koin_annotations_version") // 添加 KSP 
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
 //    implementation("io.ktor:ktor-utils:$ktor_version")
     implementation("io.ktor:ktor-io:$ktor_version")
-//    implementation("io.ktor:ktor-client-logging:$ktor_version")
+    implementation("io.ktor:ktor-client-logging:$ktor_version")
 
     // ===== kotlinx.serialization =====
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
