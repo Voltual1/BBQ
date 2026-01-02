@@ -608,7 +608,7 @@ fun CommunityScreen(navController: NavController, viewModel: CommunityViewModel,
                     // 修复：正确解析路由参数
                     val parts = route.removePrefix("my_posts/").split("/")
                     val userIdStr = parts.firstOrNull()
-                    val nickname = if (parts.size > 1) parts[1] else "用户" // 提供默认昵称
+                    val nickname = if (parts.size > 1) parts[1] else "我" // 提供默认昵称
                     
                     if (userIdStr != null) {
                         val userId = userIdStr.toLongOrNull()
@@ -666,7 +666,7 @@ fun MyLikesScreen(navController: NavController, viewModel: MyLikesViewModel,snac
                     // 修复：正确解析路由参数
                     val parts = route.removePrefix("my_posts/").split("/")
                     val userIdStr = parts.firstOrNull()
-                    val nickname = if (parts.size > 1) parts[1] else "用户" // 提供默认昵称
+                    val nickname = if (parts.size > 1) parts[1] else "我" // 提供默认昵称
                     
                     if (userIdStr != null) {
                         val userId = userIdStr.toLongOrNull()
@@ -724,7 +724,7 @@ fun HotPostsScreen(navController: NavController, viewModel: HotPostsViewModel,sn
                     // 修复：正确解析路由参数
                     val parts = route.removePrefix("my_posts/").split("/")
                     val userIdStr = parts.firstOrNull()
-                    val nickname = if (parts.size > 1) parts[1] else "用户" // 提供默认昵称
+                    val nickname = if (parts.size > 1) parts[1] else "我" // 提供默认昵称
                     
                     if (userIdStr != null) {
                         val userId = userIdStr.toLongOrNull()
@@ -782,7 +782,7 @@ fun FollowingPostsScreen(navController: NavController, viewModel: FollowingPosts
                     // 修复：正确解析路由参数
                     val parts = route.removePrefix("my_posts/").split("/")
                     val userIdStr = parts.firstOrNull()
-                    val nickname = if (parts.size > 1) parts[1] else "用户" // 提供默认昵称
+                    val nickname = if (parts.size > 1) parts[1] else "我" // 提供默认昵称
                     
                     if (userIdStr != null) {
                         val userId = userIdStr.toLongOrNull()
