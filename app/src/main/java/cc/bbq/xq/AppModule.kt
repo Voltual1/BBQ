@@ -1,6 +1,8 @@
 // /app/src/main/java/cc/bbq/xq/AppModule.kt
 package cc.bbq.xq
 
+import cc.bbq.xq.data.db.AppDatabase
+import cc.bbq.xq.data.db.DownloadTaskDao  // 新增导入
 import cc.bbq.xq.data.repository.IAppStoreRepository
 import cc.bbq.xq.data.repository.SineShopRepository
 import cc.bbq.xq.data.repository.XiaoQuRepository
@@ -26,7 +28,7 @@ import cc.bbq.xq.ui.user.MyPostsViewModel
 import cc.bbq.xq.ui.user.UserDetailViewModel
 import cc.bbq.xq.ui.settings.storage.StoreManagerViewModel 
 import cc.bbq.xq.data.StorageSettingsDataStore 
-import cc.bbq.xq.data.SearchHistoryDataStore  // 新增导入
+import cc.bbq.xq.data.SearchHistoryDataStore
 import org.koin.android.ext.koin.androidApplication
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -49,7 +51,6 @@ val appModule = module {
     viewModel { MyLikesViewModel(androidApplication()) }
     viewModel { LogViewModel(androidApplication()) }
     viewModel { MessageViewModel(androidApplication()) }
-    
     
     // 修正：注入 repositories 参数
     viewModel { AppDetailComposeViewModel(androidApplication(), get()) }
@@ -82,14 +83,23 @@ val appModule = module {
 
     // Singletons
     single { AuthManager }
+    
+    // 数据库相关 - 添加 DownloadTaskDao 定义
     single { BBQApplication.instance.database }
-    single { SearchHistoryDataStore(androidApplication()) }  // 新增
+    single { get<AppDatabase>().logDao() }  // 如果需要的话
+    single { get<AppDatabase>().browseHistoryDao() }  // 如果需要的话
+    single { get<AppDatabase>().networkCacheDao() }  // 如果需要的话
+    single { get<AppDatabase>().postDraftDao() }  // 如果需要的话
+    single { get<AppDatabase>().downloadTaskDao() }  // 关键：添加 DownloadTaskDao 的定义
+    
+    single { SearchHistoryDataStore(androidApplication()) }
     single { StorageSettingsDataStore(androidApplication()) }
 
-    // Repositories
+    // Repositories - 修改 DownloadTaskRepository 的定义
     single { XiaoQuRepository(KtorClient.ApiServiceImpl) }
     single { SineShopRepository() }
-    single { DownloadTaskRepository(get()) } 
+    single { DownloadTaskRepository(get()) }  // 这里会自动使用上面定义的 DownloadTaskDao
+    
     single<Map<AppStore, IAppStoreRepository>> {
         mapOf(
             AppStore.XIAOQU_SPACE to get<XiaoQuRepository>(),
