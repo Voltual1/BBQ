@@ -688,15 +688,24 @@ var showMoreMenu by remember { mutableStateOf(false) }
         }
 
         // --- 应用介绍 ---
-        item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("应用介绍", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    LinkifyText(appDetail.description ?: "暂无介绍")
-                }
+item {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("应用介绍", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            if (!appDetail.description.isNullOrEmpty()) {
+                LinkifyText(
+                    text = appDetail.description,
+                    navController = navController,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
+                )
+            } else {
+                Text("暂无介绍", style = MaterialTheme.typography.bodyMedium)
             }
         }
+    }
+}
 
         // --- 应用截图 ---
         if (!appDetail.previews.isNullOrEmpty()) {
@@ -874,7 +883,7 @@ var showMoreMenu by remember { mutableStateOf(false) }
 
         // --- 评论列表 ---
         item {
-            LinkifyText("评论 (${appDetail.reviewCount})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("评论 (${appDetail.reviewCount})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
 
         if (comments.isEmpty()) {
