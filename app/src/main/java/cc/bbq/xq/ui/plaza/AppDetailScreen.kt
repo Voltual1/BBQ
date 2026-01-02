@@ -891,19 +891,20 @@ item {
                 Text("暂无评论", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 16.dp))
             }
         } else {
-            items(comments) { comment ->
-                UnifiedCommentItem(
-                    comment = comment,
-                    onReply = { onCommentReply(comment) },
-                    onLongClick = { onCommentLongClick(comment.id) },
-                    onUserClick = {
-                        val userId = comment.sender.id.toLongOrNull()
-                        if (userId != null) {
-                            navController.navigate(UserDetail(userId, appDetail.store).createRoute())
-                        }
-                    }
-                )
+items(comments) { comment ->
+    UnifiedCommentItem(
+        comment = comment,
+        onReply = { onCommentReply(comment) },
+        onLongClick = { onCommentLongClick(comment.id) },
+        onUserClick = {
+            val userId = comment.sender.id.toLongOrNull()
+            if (userId != null) {
+                navController.navigate(UserDetail(userId, appDetail.store).createRoute())
             }
+        },
+        navController = navController // 新增参数
+    )
+}
         }
     }
 }
