@@ -29,6 +29,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cc.bbq.xq.R
+import cc.bbq.xq.ui.*
 import cc.bbq.xq.KtorClient
 import cc.bbq.xq.ui.community.ListScreen
 import cc.bbq.xq.AuthManager // 添加 AuthManager 导入
