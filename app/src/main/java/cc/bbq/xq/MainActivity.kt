@@ -411,6 +411,7 @@ fun getTitleForDestination(backStackEntry: NavBackStackEntry?): String {
         Update.route -> "应用更新（未完工）"
         "my_comments" -> "我的评论"
         "my_reviews" -> "我的评价"
+        "signin_settings" -> "签到设置"
         else -> "BBQ"
     }
 }
