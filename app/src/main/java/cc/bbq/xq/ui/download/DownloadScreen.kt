@@ -348,13 +348,37 @@ fun SuccessState(status: DownloadStatus.Success) {
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // 浏览链接按钮
                 BBQButton(
                     onClick = {
-                        // 使用 FileActionUtil 打开文件
-                        FileActionUtil.openFile(context, status.file)
+                        viewModel.openUrlInBrowser(task.url)
                     },
-                    text = { Text("查看文件") }
+                    text = { Text("浏览链接") },
+                    enabled = status !is DownloadStatus.Downloading && status !is DownloadStatus.Pending // 下载中禁用
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // 查看文件按钮 (仅在下载成功时显示)
+                if (status is DownloadStatus.Success) {
+                    BBQButton(
+                        onClick = {
+                            FileActionUtil.openFile(context, (status as DownloadStatus.Success).file)
+                        },
+                        text = { Text("查看文件") }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                // 删除任务按钮
+                BBQButton(
+                    onClick = {
+                        viewModel.deleteDownloadTask(task)
+                    },
+                    text = { Text("删除任务") }
                 )
             }
         }
