@@ -68,7 +68,7 @@ val appModule = module {
     
     viewModel { UserListViewModel(androidApplication()) }
     viewModel { PostCreateViewModel(androidApplication()) }
-    viewModel { MyPostsViewModel() }
+    viewModel { MyPostsViewModel(get()) }
     viewModel { PaymentViewModel(androidApplication()) }
     viewModel { UserDetailViewModel(androidApplication()) }
     viewModel { StoreManagerViewModel(androidApplication()) }

@@ -187,26 +187,25 @@ data class MyPosts(
     }
 }
 
-// 修改 Search 路由以支持传递参数
+// 修改 Search 路由定义，移除错误的 companion 对象
 object Search : AppDestination {
     override val route = "search?userId={userId}&nickname={nickname}"
-    fun createRoute(userId: Long? = null, nickname: String? = null) = 
-        "search?${if (userId != null) "userId=$userId&" else ""}nickname=${if (nickname != null) URLEncoder.encode(nickname, "UTF-8") else ""}"
     
-    companion object {
-        val arguments = listOf(
-            navArgument("userId") { 
-                type = NavType.LongType
-                nullable = true
-                defaultValue = null
-            },
-            navArgument("nickname") {
-                type = NavType.StringType
-                nullable = true
-                defaultValue = null
-            }
-        )
-    }
+    fun createRoute(userId: Long? = null, nickname: String? = null) = 
+        "search?${if (userId != null) "userId=$userId&" else ""}nickname=${if (nickname != null) java.net.URLEncoder.encode(nickname, "UTF-8") else ""}"
+    
+    val arguments = listOf(
+        navArgument("userId") { 
+            type = NavType.LongType
+            nullable = true
+            defaultValue = null
+        },
+        navArgument("nickname") {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+        }
+    )
 }
 
 object MyComments : AppDestination {

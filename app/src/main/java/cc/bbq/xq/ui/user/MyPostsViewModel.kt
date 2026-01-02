@@ -1,3 +1,4 @@
+// /app/src/main/java/cc/bbq/xq/ui/user/MyPostsViewModel.kt
 //Copyright (C) 2025 Voltual
 // 本程序是自由软件：你可以根据自由软件基金会发布的 GNU 通用公共许可证第3版
 //（或任意更新的版本）的条款重新分发和/或修改它。
@@ -19,26 +20,26 @@ import org.koin.android.annotation.KoinViewModel
 import cc.bbq.xq.data.UserFilterDataStore
 
 @KoinViewModel
-class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDataStore) {
+class MyPostsViewModel(private val userFilterDataStore: UserFilterDataStore) : ViewModel() {
     private val _posts = MutableStateFlow<List<KtorClient.Post>>(emptyList())
     val posts: StateFlow<List<KtorClient.Post>> = _posts.asStateFlow()
-
+    
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
     private var _nickname: String? = null
-
+    
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
-
+    
     private var currentPage = 1
     private val _totalPages = MutableStateFlow(1)
     val totalPages: StateFlow<Int> = _totalPages.asStateFlow()
-
+    
     // 添加状态跟踪，避免重复初始化
     private var _currentUserId: Long? = null
     private var _isInitialized = false
-
+    
     // 设置用户ID
     fun setUserId(userId: Long) {
         setUserInfo(userId, "用户")
@@ -46,7 +47,7 @@ class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDa
     
     // 修改接收 nickname
     fun setUserInfo(userId: Long, nickname: String) {
-    // 只有当用户ID真正改变时才重置状态
+        // 只有当用户ID真正改变时才重置状态
         if (_currentUserId != userId || _nickname != nickname) {
             _currentUserId = userId
             _nickname = nickname
@@ -61,14 +62,14 @@ class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDa
             loadDataIfNeeded()
         }
     }
-
+    
     private fun resetState() {
         _posts.value = emptyList()
         currentPage = 1
         _totalPages.value = 1
         _errorMessage.value = ""
     }
-
+    
     // 只在需要时加载数据
     private fun loadDataIfNeeded() {
         if (!_isInitialized && _currentUserId != null && !_isLoading.value) {
@@ -76,7 +77,7 @@ class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDa
             loadMyPosts()
         }
     }
-
+    
     fun jumpToPage(page: Int) {
         if (page in 1..totalPages.value) {
             _posts.value = emptyList()
@@ -84,48 +85,48 @@ class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDa
             loadMyPosts()
         }
     }
-
+    
     fun loadNextPage() {
         if (currentPage < totalPages.value && !_isLoading.value) {
             currentPage++
             loadMyPosts()
         }
     }
-
+    
     fun refresh() {
         // 刷新时重置页面但不重置初始化状态
         currentPage = 1
         loadMyPosts()
     }
-
+    
     private fun loadMyPosts() {
         if (_isLoading.value || _currentUserId == null) return
-
+        
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = ""
-
+            
             try {
                 val myPostsResult = KtorClient.ApiServiceImpl.getPostsList(
                     limit = PAGE_SIZE,
                     page = currentPage,
                     userId = _currentUserId!!
                 )
-
+                
                 if (myPostsResult.isSuccess) {
                     myPostsResult.getOrNull()?.let { response ->
                         if (response.code == 1) {
                             val data = response.data
                             _totalPages.value = data.pagecount
+                            
                             val newPosts = if (currentPage == 1) {
                                 data.list
                             } else {
                                 _posts.value + data.list
                             }
-
+                            
                             // 数据去重
                             val distinctPosts = newPosts.distinctBy { it.postid }
-
                             _posts.value = distinctPosts
                             _errorMessage.value = ""
                         } else {
@@ -145,7 +146,7 @@ class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDa
             }
         }
     }
-
+    
     companion object {
         private const val PAGE_SIZE = 10
     }

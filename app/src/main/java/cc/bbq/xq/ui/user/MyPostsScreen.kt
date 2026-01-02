@@ -1,3 +1,4 @@
+// /app/src/main/java/cc/bbq/xq/ui/user/MyPostsScreen.kt
 //Copyright (C) 2025 Voltual
 // 本程序是自由软件：你可以根据自由软件基金会发布的 GNU 通用公共许可证第3版
 //（或任意更新的版本）的条款重新分发和/或修改它。
@@ -28,6 +29,7 @@ import cc.bbq.xq.ui.MyLikes
 import androidx.compose.material3.SnackbarHostState
 import cc.bbq.xq.ui.MyPosts
 import kotlinx.coroutines.flow.first
+import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,10 +44,8 @@ fun MyPostsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val totalPages by viewModel.totalPages.collectAsState()
-
-    //val context = navController.context
     
-    // 使用单个 LaunchedEffect，避免重复触发
+    //val context = navController.context // 使用单个 LaunchedEffect，避免重复触发
     LaunchedEffect(userId, nickname) {
         if (nickname != null) {
             viewModel.setUserInfo(userId, nickname)
