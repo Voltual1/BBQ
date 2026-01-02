@@ -140,11 +140,14 @@ fun AppNavHost(
     )
 }
 
-        composable(
+// 修改 Search 路由处理
+composable(
     route = Search.route, 
     arguments = Search.arguments
 ) { backStackEntry ->
-    val userId = backStackEntry.arguments?.getLong("userId")
+    // 因为 userId 改为 String 类型，需要转换
+    val userIdString = backStackEntry.arguments?.getString("userId")
+    val userId = userIdString?.toLongOrNull()
     val nickname = backStackEntry.arguments?.getString("nickname")?.let {
         URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
     }

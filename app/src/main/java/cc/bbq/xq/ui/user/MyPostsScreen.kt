@@ -57,16 +57,16 @@ fun MyPostsScreen(
     // 简化的标题逻辑 - 不再需要复杂的标题设置
     val title = "用户帖子"
     
-    // 修改 onSearchClick 以传递用户信息
-    val onSearchClick: () -> Unit = {
-        if (nickname != null) {
-            // 创建包含用户信息的搜索路由
-            val route = "${Search.route}?userId=$userId&nickname=${URLEncoder.encode(nickname, "UTF-8")}"
-            navController.navigate(route)
-        } else {
-            navController.navigate(Search.route)
-        }
+// 修改 onSearchClick 以传递用户信息
+val onSearchClick: () -> Unit = {
+    if (nickname != null) {
+        // 创建包含用户信息的搜索路由
+        val route = Search.createRoute(userId, nickname)
+        navController.navigate(route)
+    } else {
+        navController.navigate(Search.route)
     }
+}
     
     BaseComposeListScreen(
         title = if (nickname != null) "$nickname 的帖子" else "用户帖子",

@@ -187,7 +187,8 @@ data class MyPosts(
     }
 }
 
-// 修改 Search 路由定义，移除错误的 companion 对象
+// /app/src/main/java/cc/bbq/xq/ui/Navigation.kt
+// 修改 Search 路由定义
 object Search : AppDestination {
     override val route = "search?userId={userId}&nickname={nickname}"
     
@@ -196,7 +197,7 @@ object Search : AppDestination {
     
     val arguments = listOf(
         navArgument("userId") { 
-            type = NavType.LongType
+            type = NavType.StringType // 改为 StringType 以支持可空值
             nullable = true
             defaultValue = null
         },
