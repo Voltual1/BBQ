@@ -234,7 +234,7 @@ composable(route = CreateRefundPost(0, 0, "", 0).route, arguments = CreateRefund
         }
         
         composable(route = Download.route) {
-    DownloadScreen(modifier = Modifier.fillMaxSize())
+    DownloadScreen(modifier = Modifier.fillMaxSize(),snackbarHostState = snackbarHostState )
 }
 
 composable(route = MyComments.route) {

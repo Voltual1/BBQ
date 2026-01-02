@@ -1,4 +1,11 @@
-// 文件路径: cc/bbq/xq/util/FileActionUtil.kt
+//Copyright (C) 2025 Voltual
+// 本程序是自由软件：你可以根据自由软件基金会发布的 GNU 通用公共许可证第3版
+//（或任意更新的版本）的条款重新分发和/或修改它。
+//本程序是基于希望它有用而分发的，但没有任何担保；甚至没有适销性或特定用途适用性的隐含担保。
+// 有关更多细节，请参阅 GNU 通用公共许可证。
+//
+// 你应该已经收到了一份 GNU 通用公共许可证的副本
+// 如果没有，请查阅 <http://www.gnu.org/licenses/>.
 package cc.bbq.xq.util
 
 import android.content.ActivityNotFoundException
@@ -7,7 +14,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.webkit.MimeTypeMap
-import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 import java.util.Locale
@@ -21,78 +27,66 @@ object FileActionUtil {
      *
      * @param context 上下文
      * @param file 要打开的文件
+     * @throws FileNotFoundException 当文件不存在时抛出
+     * @throws ActivityNotFoundException 当没有应用可以打开此文件时抛出
+     * @throws Exception 其他异常
      */
+    @Throws(Exception::class)
     fun openFile(context: Context, file: File) {
         if (!file.exists()) {
-            Toast.makeText(context, "文件不存在", Toast.LENGTH_SHORT).show()
-            return
+            throw FileNotFoundException("文件不存在: ${file.absolutePath}")
         }
 
-        try {
-            val intent: Intent
+        val intent: Intent
+        
+        // 获取文件的 MIME 类型
+        val mimeType = getMimeType(file)
+        
+        // 检查是否是APK文件
+        val isApkFile = file.extension.equals("apk", ignoreCase = true) || 
+                       mimeType == "application/vnd.android.package-archive"
+        
+        if (isApkFile) {
+            // APK文件：使用安装意图
+            intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
+            intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+            intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
             
-            // 获取文件的 MIME 类型
-            val mimeType = getMimeType(file)
-            
-            // 检查是否是APK文件
-            val isApkFile = file.extension.equals("apk", ignoreCase = true) || 
-                           mimeType == "application/vnd.android.package-archive"
-            
-            if (isApkFile) {
-                // APK文件：使用安装意图
-                intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-                intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
-                intent.putExtra(Intent.EXTRA_RETURN_RESULT, true)
-                
-                // Android 7.0+ 需要添加此标志
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } else {
-                // 其他文件：使用查看意图
-                intent = Intent(Intent.ACTION_VIEW)
-            }
-            
-            val uri: Uri
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7.0+ 需要使用 FileProvider
-                val authority = "${context.packageName}.provider"
-                uri = FileProvider.getUriForFile(context, authority, file)
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } else {
-                uri = Uri.fromFile(file)
-            }
-
-            // 设置Intent的数据和类型
-            intent.setDataAndType(uri, mimeType)
-            
-            // 如果是安装APK，设置安装后是否返回结果
-            if (isApkFile && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
-            }
-            
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            
-            // 如果是APK安装，需要在Android 8.0+处理未知来源安装权限
-            if (isApkFile && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (!context.packageManager.canRequestPackageInstalls()) {
-                    // 没有权限，提示用户去设置
-                    Toast.makeText(context, "需要允许安装来自此来源的应用", Toast.LENGTH_LONG).show()
-                    // 可以在这里跳转到设置页面
-                    val intentSettings = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-                    intentSettings.data = Uri.parse("package:${context.packageName}")
-                    intentSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intentSettings)
-                    return
-                }
-            }
-
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(context, "未找到可打开此文件的应用", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Toast.makeText(context, "打开文件失败: ${e.message}", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
+            // Android 7.0+ 需要添加此标志
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } else {
+            // 其他文件：使用查看意图
+            intent = Intent(Intent.ACTION_VIEW)
         }
+        
+        val uri: Uri
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // Android 7.0+ 需要使用 FileProvider
+            val authority = "${context.packageName}.provider"
+            uri = FileProvider.getUriForFile(context, authority, file)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } else {
+            uri = Uri.fromFile(file)
+        }
+
+        // 设置Intent的数据和类型
+        intent.setDataAndType(uri, mimeType)
+        
+        // 如果是安装APK，设置安装后是否返回结果
+        if (isApkFile && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            intent.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+        }
+        
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        
+        // 如果是APK安装，需要在Android 8.0+处理未知来源安装权限
+        if (isApkFile && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!context.packageManager.canRequestPackageInstalls()) {
+                throw SecurityException("需要允许安装来自此来源的应用")
+            }
+        }
+
+        context.startActivity(intent)
     }
 
     /**
@@ -152,4 +146,9 @@ object FileActionUtil {
             else -> "$size B"
         }
     }
+    
+    /**
+     * 自定义文件未找到异常
+     */
+    class FileNotFoundException(message: String) : Exception(message)
 }

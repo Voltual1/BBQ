@@ -1,4 +1,11 @@
-// 修改后的 DownloadScreen.kt
+//Copyright (C) 2025 Voltual
+// 本程序是自由软件：你可以根据自由软件基金会发布的 GNU 通用公共许可证第3版
+//（或任意更新的版本）的条款重新分发和/或修改它。
+//本程序是基于希望它有用而分发的，但没有任何担保；甚至没有适销性或特定用途适用性的隐含担保。
+// 有关更多细节，请参阅 GNU 通用公共许可证。
+//
+// 你应该已经收到了一份 GNU 通用公共许可证的副本
+// 如果没有，请查阅 <http://www.gnu.org/licenses/>.
 package cc.bbq.xq.ui.download
 
 import android.content.Context
@@ -26,22 +33,29 @@ import cc.bbq.xq.ui.theme.AppShapes
 import cc.bbq.xq.ui.theme.BBQButton
 import cc.bbq.xq.ui.theme.BBQCard
 import cc.bbq.xq.ui.theme.BBQIconButton
+import cc.bbq.xq.ui.theme.BBQSnackbarHost
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DownloadScreen(
     modifier: Modifier = Modifier,
-    viewModel: DownloadViewModel = koinViewModel()
+    viewModel: DownloadViewModel = koinViewModel(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val status by viewModel.downloadStatus.collectAsState()
     val downloadTasks by viewModel.downloadTasks.collectAsState()
     val hasActiveTask = status !is DownloadStatus.Idle
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = {
+            BBQSnackbarHost(hostState = snackbarHostState)
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -50,14 +64,18 @@ fun DownloadScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             // 下载任务列表
             if (downloadTasks.isEmpty()) {
                 EmptyDownloadState()
             } else {
                 LazyColumn {
                     items(downloadTasks) { task ->
-                        DownloadTaskItem(task = task, viewModel = viewModel)
+                        DownloadTaskItem(
+                            task = task, 
+                            viewModel = viewModel,
+                            snackbarHostState = snackbarHostState,
+                            scope = scope
+                        )
                     }
                 }
             }
@@ -68,7 +86,9 @@ fun DownloadScreen(
 @Composable
 fun DownloadTaskItem(
     task: DownloadTask,
-    viewModel: DownloadViewModel
+    viewModel: DownloadViewModel,
+    snackbarHostState: SnackbarHostState,
+    scope: androidx.coroutines.CoroutineScope
 ) {
     val context = LocalContext.current
     val status = remember(task) { createDownloadStatusFromTask(task) }
@@ -180,15 +200,52 @@ fun DownloadTaskItem(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 // 查看文件按钮（仅成功状态）
-                if (status is DownloadStatus.Success) {
-                    BBQButton(
-                        onClick = {
-                            FileActionUtil.openFile(context, status.file)
-                        },
-                        text = { Text("查看文件") }
+                // 查看文件按钮（仅成功状态）
+if (status is DownloadStatus.Success) {
+    BBQButton(
+        onClick = {
+            try {
+                FileActionUtil.openFile(context, status.file)
+            } catch (e: FileActionUtil.FileNotFoundException) {
+                // 使用 Snackbar 显示错误信息
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "文件不存在: ${status.file.name}",
+                        withDismissAction = true
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
+            } catch (e: ActivityNotFoundException) {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "未找到可打开此文件的应用",
+                        withDismissAction = true
+                    )
+                }
+            } catch (e: SecurityException) {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = e.message ?: "需要安装权限",
+                        withDismissAction = true
+                    )
+                }
+                // 可以在这里跳转到设置页面
+                val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+                intent.data = Uri.parse("package:${context.packageName}")
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "打开文件失败: ${e.message ?: "未知错误"}",
+                        withDismissAction = true
+                    )
+                }
+            }
+        },
+        text = { Text("查看文件") }
+    )
+    Spacer(modifier = Modifier.width(8.dp))
+}
 
                 // 删除任务按钮（所有状态都可用）
                 BBQButton(
