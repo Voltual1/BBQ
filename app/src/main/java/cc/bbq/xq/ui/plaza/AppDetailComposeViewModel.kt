@@ -391,6 +391,7 @@ class AppDetailComposeViewModel(
     }
 }
 
+
     // 扩展函数：启动下载服务
     private fun Application.startDownload(downloadUrl: String, fileName: String) {
         val intent = Intent(this, cc.bbq.xq.service.download.DownloadService::class.java)
