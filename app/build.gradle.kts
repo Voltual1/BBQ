@@ -15,8 +15,8 @@ android {
         applicationId = "cc.bbq.xq"
         minSdk = 21
         targetSdk = 35
-        versionCode = 400
-        versionName = "15.0"
+        versionCode = 401
+        versionName = "15.1"
         multiDexEnabled = true
         buildConfigField("String", "LICENSE", "\"GPLv3\"")
         resourceConfigurations += listOf("zh")
@@ -59,7 +59,21 @@ android {
 
     packaging {
         resources {
+            // 排除重复的协议文件
             excludes.add("/META-INF/{AL2.0,LGPL2.1}")
+            excludes.add("/META-INF/INDEX.LIST")
+            excludes.add("/META-INF/DEPENDENCIES")
+            
+            // 排除protobuf相关目录
+            excludes.add("/google/protobuf/**")
+            excludes.add("/src/google/protobuf/**")
+            
+            // 排除重复的LICENSE文件
+            excludes.add("/META-INF/LICENSE*")
+            excludes.add("/META-INF/*.txt")
+            
+            // 合并重复资源（可选）
+            merges.add("/META-INF/services/**")
         }
     }
     
@@ -85,7 +99,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
     implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation("androidx.compose.material:material")
+   // implementation("androidx.compose.material:material")
 
     // ===== 图片加载方案 =====
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
@@ -120,9 +134,9 @@ ksp("io.insert-koin:koin-ksp-compiler:$koin_annotations_version") // 添加 KSP 
     implementation("io.ktor:ktor-client-okhttp:$ktor_version")
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
-    implementation("io.ktor:ktor-utils:$ktor_version")
+//    implementation("io.ktor:ktor-utils:$ktor_version")
     implementation("io.ktor:ktor-io:$ktor_version")
-    implementation("io.ktor:ktor-client-logging:$ktor_version")
+//    implementation("io.ktor:ktor-client-logging:$ktor_version")
 
     // ===== kotlinx.serialization =====
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
