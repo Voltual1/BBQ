@@ -21,7 +21,10 @@ import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
-class DownloadViewModel(application: Application) : AndroidViewModel(application) {
+class DownloadViewModel(
+    application: Application,
+    private val downloadTaskRepository: DownloadTaskRepository
+) : AndroidViewModel(application) {
     private val _downloadStatus = MutableStateFlow<DownloadStatus>(DownloadStatus.Idle)
     val downloadStatus: StateFlow<DownloadStatus> = _downloadStatus.asStateFlow()
 
@@ -51,10 +54,6 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
     }
 
     init {
-        // 初始化 Repository
-        val appDatabase = AppDatabase.getDatabase(application)
-        downloadTaskRepository = DownloadTaskRepository(appDatabase.downloadTaskDao())
-
         bindService()
         // 从数据库获取所有下载任务
         observeDownloadTasks()
