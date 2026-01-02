@@ -26,14 +26,15 @@ import cc.bbq.xq.ui.theme.AppShapes
 import cc.bbq.xq.ui.theme.BBQButton
 import cc.bbq.xq.ui.theme.BBQCard
 import cc.bbq.xq.ui.theme.BBQIconButton
-// 关键：导入 FileActionUtil
+import org.koin.androidx.compose.koinViewModel
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape // 添加 CircleShape 的导入
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DownloadScreen(
     modifier: Modifier = Modifier,
-    viewModel: DownloadViewModel = viewModel()
+    val viewModel: DownloadViewModel = koinViewModel()
 ) {
     val status by viewModel.downloadStatus.collectAsState()
     // 从 ViewModel 获取所有下载任务

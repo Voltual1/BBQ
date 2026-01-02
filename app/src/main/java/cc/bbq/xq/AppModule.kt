@@ -89,7 +89,7 @@ val appModule = module {
     // Repositories
     single { XiaoQuRepository(KtorClient.ApiServiceImpl) }
     single { SineShopRepository() }
-    single { DownloadTaskRepository() } 
+    single { DownloadTaskRepository(get()) } 
     single<Map<AppStore, IAppStoreRepository>> {
         mapOf(
             AppStore.XIAOQU_SPACE to get<XiaoQuRepository>(),
