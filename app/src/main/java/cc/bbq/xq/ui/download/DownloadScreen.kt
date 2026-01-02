@@ -8,7 +8,10 @@
 // 如果没有，请查阅 <http://www.gnu.org/licenses/>.
 package cc.bbq.xq.ui.download
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
@@ -26,7 +29,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import cc.bbq.xq.service.download.DownloadStatus
 import cc.bbq.xq.service.download.DownloadTask
 import cc.bbq.xq.ui.theme.AppShapes
@@ -36,8 +40,6 @@ import cc.bbq.xq.ui.theme.BBQIconButton
 import cc.bbq.xq.ui.theme.BBQSnackbarHost
 import cc.bbq.xq.util.FileActionUtil
 import androidx.compose.foundation.shape.CircleShape
-import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun DownloadScreen(
