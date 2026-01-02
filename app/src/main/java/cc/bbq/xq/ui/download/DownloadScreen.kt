@@ -11,6 +11,7 @@ package cc.bbq.xq.ui.download
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import kotlinx.coroutines.CoroutineScope
 import android.net.Uri
 import android.text.format.Formatter
 import androidx.compose.animation.AnimatedContent
@@ -89,7 +90,8 @@ fun DownloadScreen(
 fun DownloadTaskItem(
     task: DownloadTask,
     viewModel: DownloadViewModel,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    scope: CoroutineScope
 ) {
     val context = LocalContext.current
     val status = remember(task) { createDownloadStatusFromTask(task) }
