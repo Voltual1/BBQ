@@ -172,7 +172,7 @@ data class MyPosts(
     val userId: Long,
     val nickname: String? = null  // 新增可选参数
 ) : AppDestination {
-    override val route = "my_posts/{${AppDestination.ARG_USER_ID}}/{nickname?}"
+    override val route = "my_posts/{${AppDestination.ARG_USER_ID}}/{nickname}"
     fun createRoute() = "my_posts/$userId/${nickname?.let { URLEncoder.encode(it, "UTF-8") } ?: ""}"
     
     companion object {
@@ -180,8 +180,8 @@ data class MyPosts(
             navArgument(AppDestination.ARG_USER_ID) { type = NavType.LongType },
             navArgument("nickname") { 
                 type = NavType.StringType
-                nullable = true
-                defaultValue = null
+                nullable = false
+                defaultValue = ""
             }
         )
     }

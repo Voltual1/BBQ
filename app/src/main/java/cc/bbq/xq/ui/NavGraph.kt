@@ -309,7 +309,8 @@ composable(route = UserDetail(0).route, arguments = UserDetail.arguments) { back
         navController = navController // 传递 navController
     )
 }
-        // 更新 MyPosts 路由处理
+
+// 更新 MyPosts 路由处理
 composable(
     route = MyPosts(0).route, 
     arguments = MyPosts.arguments

@@ -478,16 +478,16 @@ private fun UserStats(
             VerticalDivider()
         }
         userData.postCount?.let {
-            StatItem(
-                count = it,
-                label = "帖子",
-                onClick = {
-                    // 传递 userId 和 nickname 到 MyPostsScreen
-                    val route = MyPosts(userData.id, userData.displayName).createRoute()
-                    navController.navigate(route)
-                },
-                modifier = Modifier.weight(1f)
-            )
+StatItem(
+    count = it,
+    label = "帖子",
+    onClick = {
+        // 传递 userId 和 nickname 到 MyPostsScreen
+        val route = MyPosts(userData.id, userData.displayName).createRoute()
+        navController.navigate(route)
+    },
+    modifier = Modifier.weight(1f)
+)
             VerticalDivider()
         }
         userData.likeCount?.let {

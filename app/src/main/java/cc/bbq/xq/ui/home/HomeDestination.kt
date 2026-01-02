@@ -110,16 +110,20 @@ fun HomeDestination(
             onMyLikesClick = { navController.navigate(MyLikes.route) },
             onFollowersClick = { navController.navigate(FollowList.route) },
             onFansClick = { navController.navigate(FanList.route) },
-            onPostsClick = {
-                coroutineScope.launch {
-                    val userId = userIdFlow.first()
-                    if (userId > 0) {
-                        navController.navigate(MyPosts(userId).createRoute())
-                    } else {
-                        viewModel.showSnackbar(context.getString(R.string.unable_to_get_userid))
-                    }
-                }
-            },
+onPostsClick = {
+    coroutineScope.launch {
+        val userId = userIdFlow.first()
+        if (userId > 0) {
+            // 获取用户昵称用于路由创建
+            val nickname = uiState.nickname ?: "用户"
+            // 确保传递 nickname 参数
+            val route = MyPosts(userId, nickname).createRoute()
+            navController.navigate(route)
+        } else {
+            viewModel.showSnackbar(context.getString(R.string.unable_to_get_userid))
+        }
+    }
+},
             onMyResourcesClick = {
                 coroutineScope.launch{
                     val userId = userIdFlow.first()
