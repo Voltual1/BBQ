@@ -16,14 +16,17 @@ import kotlinx.coroutines.launch
 import cc.bbq.xq.KtorClient
 import java.io.IOException
 import org.koin.android.annotation.KoinViewModel
+import cc.bbq.xq.data.UserFilterDataStore
 
 @KoinViewModel
-class MyPostsViewModel : ViewModel() {
+class MyPostsViewModel : ViewModel(private val userFilterDataStore: UserFilterDataStore) {
     private val _posts = MutableStateFlow<List<KtorClient.Post>>(emptyList())
     val posts: StateFlow<List<KtorClient.Post>> = _posts.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    
+    private var _nickname: String? = null
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
@@ -36,13 +39,25 @@ class MyPostsViewModel : ViewModel() {
     private var _currentUserId: Long? = null
     private var _isInitialized = false
 
-    // 设置用户ID - 添加防重复逻辑
+    // 设置用户ID
     fun setUserId(userId: Long) {
-        // 只有当用户ID真正改变时才重置状态
-        if (_currentUserId != userId) {
+        setUserInfo(userId, "用户")
+    }
+    
+    // 修改接收 nickname
+    fun setUserInfo(userId: Long, nickname: String) {
+    // 只有当用户ID真正改变时才重置状态
+        if (_currentUserId != userId || _nickname != nickname) {
             _currentUserId = userId
+            _nickname = nickname
             _isInitialized = false
             resetState()
+            
+            // 将用户筛选信息存储到 DataStore
+            viewModelScope.launch {
+                userFilterDataStore.setUserFilter(userId, nickname)
+            }
+            
             loadDataIfNeeded()
         }
     }

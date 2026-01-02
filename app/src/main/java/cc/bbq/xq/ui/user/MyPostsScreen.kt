@@ -35,6 +35,7 @@ fun MyPostsScreen(
     viewModel: MyPostsViewModel,
     userId: Long, // 目标用户的ID
     snackbarHostState: SnackbarHostState,
+    nickname: String?, // 新增 nickname 参数
     navController: NavController
 ) {
     val posts by viewModel.posts.collectAsState()
@@ -45,15 +46,30 @@ fun MyPostsScreen(
     //val context = navController.context
     
     // 使用单个 LaunchedEffect，避免重复触发
-    LaunchedEffect(userId) {
-        viewModel.setUserId(userId)
+    LaunchedEffect(userId, nickname) {
+        if (nickname != null) {
+            viewModel.setUserInfo(userId, nickname)
+        } else {
+            viewModel.setUserId(userId)
+        }
     }
     
     // 简化的标题逻辑 - 不再需要复杂的标题设置
     val title = "用户帖子"
     
+    // 修改 onSearchClick 以传递用户信息
+    val onSearchClick: () -> Unit = {
+        if (nickname != null) {
+            // 创建包含用户信息的搜索路由
+            val route = "${Search.route}?userId=$userId&nickname=${URLEncoder.encode(nickname, "UTF-8")}"
+            navController.navigate(route)
+        } else {
+            navController.navigate(Search.route)
+        }
+    }
+    
     BaseComposeListScreen(
-        title = title,
+        title = if (nickname != null) "$nickname 的帖子" else "用户帖子",
         posts = posts,
         isLoading = isLoading,
         errorMessage = errorMessage,
@@ -62,7 +78,7 @@ fun MyPostsScreen(
         },
         onLoadMore = { viewModel.loadNextPage() },
         onRefresh = { viewModel.refresh() },
-        onSearchClick = { navController.navigate(Search.route) },
+        onSearchClick = onSearchClick, // 使用新的搜索点击处理
         snackbarHostState = snackbarHostState,
         onCreateClick = { navController.navigate(CreatePost.route) },
         historyClick = { navController.navigate(BrowseHistory.route) },
@@ -76,9 +92,12 @@ fun MyPostsScreen(
                 route == "following_posts" -> navController.navigate(FollowingPosts.route)
                 route == "my_likes" -> navController.navigate(MyLikes.route)
                 route.startsWith("my_posts/") -> {
-                    val targetUserId = route.removePrefix("my_posts/").toLongOrNull()
+                    // 需要从路由中解析 userId
+                    val parts = route.removePrefix("my_posts/").split("/")
+                    val targetUserId = parts.first().toLongOrNull()
+                    val targetNickname = if (parts.size > 1) parts[1] else null
                     if (targetUserId != null && targetUserId != userId) {
-                        navController.navigate(MyPosts(targetUserId).createRoute())
+                        navController.navigate(MyPosts(targetUserId, targetNickname).createRoute())
                     }
                 }
                 else -> navController.navigate(route)

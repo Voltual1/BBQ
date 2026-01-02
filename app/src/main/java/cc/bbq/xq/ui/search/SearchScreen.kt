@@ -238,18 +238,21 @@ private fun SearchHeader(
     onModeChange: (SearchMode) -> Unit,
     onJumpClick: () -> Unit,
     focusRequester: FocusRequester,
+    filteredNickname: String?,  // 新增参数
+    isUserFilterMode: Boolean,  // 新增参数
+    onClearFilter: () -> Unit,  // 新增回调
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
-
+    var showFilterMenu by remember { mutableStateOf(false) }  // 新增：筛选菜单状态
+    
     Column(modifier = modifier) {
-        // 修复：使用更紧凑的布局避免按钮被挤出去
+        // 第一行：模式选择和用户筛选指示器
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 模式选择 - 使用更紧凑的按钮
             Box {
                 AssistChip(
                     onClick = { showMenu = true },
@@ -299,27 +302,59 @@ private fun SearchHeader(
                 }
             }
             
-            // 跳页按钮（仅帖子模式且有多页时显示）- 使用更小的图标
-            if (searchMode == SearchMode.POSTS && totalPages > 1) {
+            // 用户筛选指示器和清除按钮
+            if (isUserFilterMode && filteredNickname != null) {
+                Box {
+                    AssistChip(
+                        onClick = { showFilterMenu = true },
+                        label = {
+                            Text(
+                                text = "筛选: $filteredNickname",
+                                maxLines = 1
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp))
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                    
+                    DropdownMenu(
+                        expanded = showFilterMenu, 
+                        onDismissRequest = { showFilterMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("清除筛选") }, 
+                            onClick = { 
+                                onClearFilter()
+                                showFilterMenu = false
+                            }
+                        )
+                    }
+                }
+            } else if (searchMode == SearchMode.POSTS && totalPages > 1) {
+                // 跳页按钮
                 IconButton(
                     onClick = onJumpClick,
-                    modifier = Modifier.size(32.dp) // 更小的按钮尺寸
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.kakao_page),
                         contentDescription = "跳页",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp) // 更小的图标尺寸
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             } else {
-                // 占位空间，保持布局平衡
                 Spacer(modifier = Modifier.size(32.dp))
             }
         }
-
+        
         Spacer(modifier = Modifier.height(8.dp))
-
+        
         // 搜索输入框
         TextField(
             value = query,
@@ -327,7 +362,14 @@ private fun SearchHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester),
-            placeholder = { Text("输入关键词搜索...") },
+            placeholder = { 
+                Text(
+                    if (isUserFilterMode && filteredNickname != null) 
+                        "在 $filteredNickname 的帖子中搜索..." 
+                    else 
+                        "输入关键词搜索..."
+                )
+            },
             leadingIcon = {
                 Icon(Icons.Default.Search, "搜索", modifier = Modifier.size(20.dp))
             },

@@ -17,6 +17,7 @@ import cc.bbq.xq.KtorClient // 导入 KtorClient
 import kotlinx.coroutines.flow.*
 import org.koin.android.annotation.KoinViewModel
 import cc.bbq.xq.data.SearchHistoryDataStore
+import cc.bbq.xq.data.UserFilterDataStore
 import kotlinx.coroutines.launch
 
 enum class SearchMode {
@@ -33,7 +34,10 @@ sealed class SearchResultItem {
 }
 
 @KoinViewModel
-class SearchViewModel(private val searchHistoryDataStore: SearchHistoryDataStore) : ViewModel() {
+class SearchViewModel(
+    private val searchHistoryDataStore: SearchHistoryDataStore,
+    private val userFilterDataStore: UserFilterDataStore  // 新增依赖
+) : ViewModel() {
     private val browseHistoryDao = BBQApplication.instance.database.browseHistoryDao()
     private val logDao = BBQApplication.instance.database.logDao()
     //private val apiService = RetrofitClient.instance // 移除 RetrofitClient
@@ -58,6 +62,18 @@ class SearchViewModel(private val searchHistoryDataStore: SearchHistoryDataStore
     private val _totalPages = MutableStateFlow(1)
     val totalPages: StateFlow<Int> = _totalPages.asStateFlow()
     
+        // 新增状态：用户筛选信息
+    private val _filteredUserId = MutableStateFlow<Long?>(null)
+    private val _filteredNickname = MutableStateFlow<String?>(null)
+    
+    // 暴露给 UI 的状态
+    val filteredUserId: StateFlow<Long?> = _filteredUserId.asStateFlow()
+    val filteredNickname: StateFlow<String?> = _filteredNickname.asStateFlow()
+    
+    // 新增：是否处于用户筛选模式
+    private val _isUserFilterMode = MutableStateFlow(false)
+    val isUserFilterMode: StateFlow<Boolean> = _isUserFilterMode.asStateFlow()
+    
     private val _hasMoreData = MutableStateFlow(true)
     val hasMoreData: StateFlow<Boolean> = _hasMoreData.asStateFlow()
 
@@ -66,6 +82,24 @@ class SearchViewModel(private val searchHistoryDataStore: SearchHistoryDataStore
 
     fun onQueryChange(newQuery: String) {
         _query.value = newQuery
+    }
+    
+    init {
+        viewModelScope.launch {
+            // 监听用户筛选信息变化
+            userFilterDataStore.userFilterFlow.collect { (userId, nickname) ->
+                _filteredUserId.value = userId
+                _filteredNickname.value = nickname
+                _isUserFilterMode.value = userId != null && nickname != null
+            }
+        }
+    }
+    
+    // 新增：清除用户筛选
+    fun clearUserFilter() {
+        viewModelScope.launch {
+            userFilterDataStore.clearUserFilter()
+        }
     }
 
     fun onSearchModeChange(newMode: SearchMode) {
@@ -154,7 +188,8 @@ class SearchViewModel(private val searchHistoryDataStore: SearchHistoryDataStore
         val response = KtorClient.ApiServiceImpl.searchPosts(
             query = _query.value, 
             page = currentPage, 
-            limit = PAGE_SIZE
+            limit = PAGE_SIZE,
+            userId = if (_isUserFilterMode.value) _filteredUserId.value else null  // 只在筛选模式下添加 userId
         )
         
         response.onSuccess { result ->
@@ -185,6 +220,15 @@ class SearchViewModel(private val searchHistoryDataStore: SearchHistoryDataStore
         _hasMoreData.value = false
         _totalPages.value = 1
         _errorMessage.value = null
+    }
+    
+    // 新增：从导航参数初始化用户筛选
+    fun initFromNavArgs(userId: Long?, nickname: String?) {
+        viewModelScope.launch {
+            if (userId != null && nickname != null) {
+                userFilterDataStore.setUserFilter(userId, nickname)
+            }
+        }
     }
 
     private suspend fun searchLocalLogs() {

@@ -40,6 +40,7 @@ import cc.bbq.xq.ui.settings.update.UpdateSettingsViewModel
 import cc.bbq.xq.ui.download.DownloadViewModel
 import cc.bbq.xq.ui.home.HomeViewModel
 import cc.bbq.xq.ui.plaza.VersionListViewModel
+import cc.bbq.xq.data.UserFilterDataStore
 import cc.bbq.xq.ui.user.MyCommentsViewModel
 
 val appModule = module {
@@ -84,7 +85,9 @@ val appModule = module {
     viewModel { MyReviewsViewModel(androidApplication(), get()) }
 
     // Singletons
-    single { AuthManager }
+//    single { AuthManager }AuthManager是object天生单例这里不再用koin管理
+    
+    single { UserFilterDataStore(get()) }
     
     // 数据库相关 - 添加 DownloadTaskDao 定义
     single { BBQApplication.instance.database }

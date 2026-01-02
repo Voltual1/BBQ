@@ -140,22 +140,29 @@ fun AppNavHost(
     )
 }
 
-        composable(route = Search.route) {
-            SearchScreen(
-                viewModel = searchViewModel,
-                onPostClick = { postId -> navController.navigate(PostDetail(postId).createRoute()) },
-                onLogClick = { navController.navigate(LogViewer.route) },
-                modifier = Modifier.fillMaxSize() // 添加 modifier
-            )
+        composable(
+    route = Search.route, 
+    arguments = Search.arguments
+) { backStackEntry ->
+    val userId = backStackEntry.arguments?.getLong("userId")
+    val nickname = backStackEntry.arguments?.getString("nickname")?.let {
+        URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
+    }
+    
+    // 初始化 SearchViewModel 的用户筛选
+    LaunchedEffect(userId, nickname) {
+        if (userId != null && nickname != null) {
+            searchViewModel.initFromNavArgs(userId, nickname)
         }
-        // 新增：应用更新屏幕的导航项
-        composable(route = Update.route) {
-            UpdateScreen(
-                snackbarHostState = snackbarHostState, // 传递来自 AppNavHost 的 snackbarHostState
-                modifier = Modifier.fillMaxSize()
-                // viewModel 会通过 viewModel() 工厂自动注入
-            )
-        }
+    }
+    
+    SearchScreen(
+        viewModel = searchViewModel,
+        onPostClick = { postId -> navController.navigate(PostDetail(postId).createRoute()) },
+        onLogClick = { navController.navigate(LogViewer.route) },
+        modifier = Modifier.fillMaxSize()
+    )
+}
         
 composable(route = SignInSettings.route ) {
     SignInSettingsScreen(
@@ -295,17 +302,24 @@ val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
                 modifier = Modifier.fillMaxSize()
             )
         }
-        composable(route = MyPosts(0).route, arguments = MyPosts.arguments) { backStackEntry ->
+        // 更新 MyPosts 路由处理
+composable(
+    route = MyPosts(0).route, 
+    arguments = MyPosts.arguments
+) { backStackEntry ->
     val userId = backStackEntry.arguments?.getLong(AppDestination.ARG_USER_ID) ?: -1L
+    val nickname = backStackEntry.arguments?.getString("nickname")?.let {
+        if (it.isNotEmpty()) URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) else null
+    }
+    
     MyPostsScreen(
         viewModel = myPostsViewModel,
         userId = userId,
+        nickname = nickname,
         navController = navController,
-        snackbarHostState = snackbarHostState // 添加这行
+        snackbarHostState = snackbarHostState
     )
 }
-
-        // 在 NavGraph.kt 中更新 UserListScreen 的调用
 
         // 关注列表
 composable(route = FollowList.route) {

@@ -781,7 +781,8 @@ private suspend inline fun <reified T> safeApiCall(block: suspend () -> HttpResp
              appid: Int = 1,
              query: String,
              limit: Int = 10,
-             page: Int
+             page: Int,
+             userId: Long? = null  // 新增可选的 userId 参数
         ): Result<PostListResponse>
 
         suspend fun getHotPostsList(
@@ -1247,19 +1248,21 @@ private suspend inline fun <reified T> safeApiCall(block: suspend () -> HttpResp
         }
 
         override suspend fun searchPosts(
-            appid: Int,
-            query: String,
-            limit: Int,
-            page: Int
-        ): Result<PostListResponse> {
-            val parameters = Parameters.build {
-                append("appid", appid.toString())
-                append("keyword", query)
-                append("limit", limit.toString())
-                append("page", page.toString())
-            }
-            return request(SEARCH_POSTS_URL, parameters = parameters)
-        }
+    appid: Int,
+    query: String,
+    limit: Int,
+    page: Int,
+    userId: Long?
+): Result<PostListResponse> {
+    val parameters = Parameters.build {
+        append("appid", appid.toString())
+        append("keyword", query)
+        append("limit", limit.toString())
+        append("page", page.toString())
+        userId?.let { append("userid", it.toString()) }  // 只在有 userId 时添加
+    }
+    return request(SEARCH_POSTS_URL, parameters = parameters)
+}
 
         override suspend fun getHotPostsList(
             appid: Int,
