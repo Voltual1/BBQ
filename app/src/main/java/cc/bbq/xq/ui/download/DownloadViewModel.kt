@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cc.bbq.xq.data.db.AppDatabase
-import cc.bbq.xq.data.repository.DownloadTaskRepository
+import cc.bbq.xq.data.db.DownloadTaskRepository
 import cc.bbq.xq.service.download.DownloadService
 import cc.bbq.xq.service.download.DownloadStatus
 import cc.bbq.xq.service.download.DownloadTask
