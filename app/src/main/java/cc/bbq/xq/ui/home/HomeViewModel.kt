@@ -121,7 +121,7 @@ class HomeViewModel : ViewModel() {
                         
                         // 根据 sign_today 字段设置签到状态消息
                 val signStatusMessage = if (!userData.sign_today) {
-                    "今天还没有签到"
+                    "点这里签到领经验和硬币哦"
                 } else {
                     null // 已签到则显示 null，会显示默认文案
                 }

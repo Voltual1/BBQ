@@ -212,6 +212,10 @@ object AccountProfileArgs {
     )
 }
 
+object SignInSettings : AppDestination {
+    override val route = "signInSettings"
+}
+
 // --- 资源广场与应用 ---
 
 data class ResourcePlaza(

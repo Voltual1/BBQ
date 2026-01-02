@@ -65,6 +65,7 @@ import java.nio.charset.StandardCharsets
 import cc.bbq.xq.ui.animation.materialSharedAxisXIn
 import cc.bbq.xq.ui.animation.materialSharedAxisXOut
 import androidx.compose.ui.unit.dp
+import cc.bbq.xq.ui.settings.signin.SignInSettingsScreen
 import cc.bbq.xq.ui.animation.rememberSlideDistance
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.bbq.xq.ui.settings.update.UpdateSettingsScreen //导入更新屏幕
@@ -155,6 +156,12 @@ fun AppNavHost(
                 // viewModel 会通过 viewModel() 工厂自动注入
             )
         }
+        
+composable(route = SignInSettings.route ) {
+    SignInSettingsScreen(
+        snackbarHostState = remember { SnackbarHostState() }
+    )
+}
 
         composable(route = ThemeCustomize.route) {
             ThemeCustomizeScreen(
