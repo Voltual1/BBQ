@@ -367,26 +367,13 @@ class AppDetailComposeViewModel(
             }
         }
     }
-    
-    // 新增：启动下载
+        
     private fun startDownload(downloadUrl: String) {
-        viewModelScope.launch {
-            try {
-                // 触发 Service 开始下载
-                val appName = _appDetail.value?.name ?: "未命名应用"
-                getApplication<Application>().startDownload(downloadUrl, appName)
-                
-                // 发送 Snackbar 事件
-                _snackbarEvent.emit("开始下载: $appName")
-                
-                // 发送导航到下载管理界面的事件
-                _navigateToDownloadEvent.emit(true)
-                
-            } catch (e: Exception) {
-                _errorMessage.value = "启动下载失败: ${e.message}"
-            }
-        }
-    }
+    val uri = Uri.parse(downloadUrl)
+    val fileName = uri.lastPathSegment ?: "unknown.apk" // 从 URL 提取文件名
+    getApplication<Application>().startDownload(downloadUrl, fileName)
+    navigateToDownloadEvent.emit(true)
+}
 
     // 扩展函数：启动下载服务
     private fun Application.startDownload(downloadUrl: String, fileName: String) {
