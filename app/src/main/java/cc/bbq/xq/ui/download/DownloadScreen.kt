@@ -89,8 +89,7 @@ fun DownloadScreen(
 fun DownloadTaskItem(
     task: DownloadTask,
     viewModel: DownloadViewModel,
-    snackbarHostState: SnackbarHostState,
-    scope: androidx.coroutines.CoroutineScope
+    snackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
     val status = remember(task) { createDownloadStatusFromTask(task) }
