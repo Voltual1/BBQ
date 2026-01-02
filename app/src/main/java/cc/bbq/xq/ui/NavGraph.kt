@@ -284,6 +284,7 @@ composable(route = UserDetail(0).route, arguments = UserDetail.arguments) { back
         }
     }
     
+    
     val userData by viewModel.userData.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
