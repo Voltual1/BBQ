@@ -44,15 +44,15 @@ fun SignInSettingsScreen(
             onCheckedChange = { checked ->
                 scope.launch {
                     viewModel.setAutoSignIn(checked)
-                    if (checked) {
+ /*                   if (checked) {
                         // 如果开启自动签到，立即执行一次签到
-                        //TODO
+                        viewModel.performAutoSignIn { success, message ->
                             scope.launch {
                                 snackbarHostState.showSnackbar(message)
                             }
                         }
                     }
-                }
+                }*/
             },
             modifier = Modifier.fillMaxWidth()
         )        
