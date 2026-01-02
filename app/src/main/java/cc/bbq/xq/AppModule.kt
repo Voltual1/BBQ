@@ -59,12 +59,11 @@ val appModule = module {
     
     viewModel { AppReleaseViewModel(androidApplication()) }
     
-    // PlazaViewModel
     viewModel { PlazaViewModel(androidApplication(), get()) }
     
     viewModel { PlayerViewModel(androidApplication()) }
     
-    viewModel { SearchViewModel(get()) }
+    viewModel { SearchViewModel(get(), get()) }
     
     viewModel { UserListViewModel(androidApplication()) }
     viewModel { PostCreateViewModel(androidApplication()) }

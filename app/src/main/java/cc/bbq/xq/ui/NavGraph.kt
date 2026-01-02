@@ -285,23 +285,26 @@ composable(route = UserDetail(0).route, arguments = UserDetail.arguments) { back
     }
     
     val userData by viewModel.userData.collectAsStateWithLifecycle()
-val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    
     UserDetailScreen(
-                userData = userData,
-                isLoading = isLoading,
-                snackbarHostState = snackbarHostState,
-                errorMessage = errorMessage,
-                onPostsClick = { navController.navigate(MyPosts(userId).createRoute()) },
-                onResourcesClick = { uid, store -> // 接收 store 参数
-    navController.navigate(ResourcePlaza(isMyResource = false, userId = uid, mode = "public", storeName = store.name).createRoute())
-},
-                onImagePreview = { imageUrl ->
-                    navController.navigate(ImagePreview(imageUrl).createRoute())
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        userData = userData,
+        isLoading = isLoading,
+        snackbarHostState = snackbarHostState,
+        errorMessage = errorMessage,
+        onPostsClick = { navController.navigate(MyPosts(userId).createRoute()) },
+        onResourcesClick = { uid, store ->
+            // 接收 store 参数
+            navController.navigate(ResourcePlaza(isMyResource = false, userId = uid, mode = "public", storeName = store.name).createRoute())
+        },
+        onImagePreview = { imageUrl ->
+            navController.navigate(ImagePreview(imageUrl).createRoute())
+        },
+        modifier = Modifier.fillMaxSize(),
+        navController = navController // 传递 navController
+    )
+}
         // 更新 MyPosts 路由处理
 composable(
     route = MyPosts(0).route, 

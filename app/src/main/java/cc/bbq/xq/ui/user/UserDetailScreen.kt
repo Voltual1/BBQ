@@ -67,24 +67,24 @@ import cc.bbq.xq.AppStore
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun UserDetailScreen(
-    userData: UnifiedUserDetail?,  // 使用 UnifiedUserDetail
+    userData: UnifiedUserDetail?, // 使用 UnifiedUserDetail
     isLoading: Boolean,
     errorMessage: String?,
     onPostsClick: () -> Unit,
     onResourcesClick: (Long, AppStore) -> Unit, // 修改：增加 AppStore 参数
     onImagePreview: (String) -> Unit,
     modifier: Modifier = Modifier,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    navController: NavController // 添加 navController 参数
 ) {
     // 下拉刷新状态
     var refreshing by remember { mutableStateOf(false) }
-
     val pullRefreshState = rememberPullRefreshState(refreshing, onRefresh = {
         refreshing = true
         //viewModel.refresh()
         refreshing = false
     })
-
+    
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -98,9 +98,10 @@ fun UserDetailScreen(
             onPostsClick = onPostsClick,
             onResourcesClick = onResourcesClick,
             onImagePreview = onImagePreview,
-            snackbarHostState = snackbarHostState
+            snackbarHostState = snackbarHostState,
+            navController = navController // 传递 navController
         )
-
+        
         PullRefreshIndicator(
             refreshing = refreshing,
             state = pullRefreshState,
@@ -114,13 +115,14 @@ fun UserDetailScreen(
 @Composable
 private fun ScreenContent(
     modifier: Modifier = Modifier,
-    userData: UnifiedUserDetail?,  // 使用 UnifiedUserDetail
+    userData: UnifiedUserDetail?, // 使用 UnifiedUserDetail
     isLoading: Boolean,
     errorMessage: String?,
     onPostsClick: () -> Unit,
-    onResourcesClick: (Long, AppStore) -> Unit, // 修改：增加 AppStore 参数: (Long) -> Unit,
+    onResourcesClick: (Long, AppStore) -> Unit, // 修改：增加 AppStore 参数
     onImagePreview: (String) -> Unit,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    navController: NavController // 添加 navController 参数
 ) {
     Box(
         modifier = modifier
@@ -134,12 +136,14 @@ private fun ScreenContent(
             else -> {
                 // 根据 store 选择不同的 UI
                 when (userData.store) {
-                    AppStore.XIAOQU_SPACE -> XiaoQuProfileContent(  // 使用 UnifiedUserDetail
+                    AppStore.XIAOQU_SPACE -> XiaoQuProfileContent(
+                        // 使用 UnifiedUserDetail
                         userData = userData,
                         onPostsClick = onPostsClick,
                         onResourcesClick = onResourcesClick,
                         onImagePreview = onImagePreview,
-                        snackbarHostState = snackbarHostState
+                        snackbarHostState = snackbarHostState,
+                        navController = navController // 传递 navController
                     )
                     AppStore.SIENE_SHOP -> SieneShopProfileContent(
                         userData = userData,

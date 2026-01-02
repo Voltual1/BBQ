@@ -55,6 +55,10 @@ fun SearchScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val totalPages by viewModel.totalPages.collectAsState()
     val hasMoreData by viewModel.hasMoreData.collectAsState()
+    
+        // 新增：用户筛选相关状态
+    val filteredNickname by viewModel.filteredNickname.collectAsState()
+    val isUserFilterMode by viewModel.isUserFilterMode.collectAsState()
 
     // 新增：跳页对话框状态
     var showJumpDialog by remember { mutableStateOf(false) }
@@ -136,24 +140,23 @@ fun SearchScreen(
     Column(modifier = modifier.fillMaxSize()) {
         // 搜索栏 - 优化布局避免按钮被挤出去
         SearchHeader(
-            query = query,
-            searchMode = searchMode,
-            totalPages = totalPages,
-            onQueryChange = viewModel::onQueryChange,
-            onSearchSubmit = {
-                viewModel.submitSearch(it)
-                keyboardController?.hide()
-            },
-            onModeChange = viewModel::onSearchModeChange,
-            onJumpClick = { 
-                showJumpDialog = true
-                inputPage = ""
-            },
-            focusRequester = focusRequester,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
+        query = query,
+        searchMode = searchMode,
+        totalPages = totalPages,
+        onQueryChange = viewModel::onQueryChange,
+        onSearchSubmit = { viewModel.submitSearch(it)
+            keyboardController?.hide() },
+        onModeChange = viewModel::onSearchModeChange,
+        onJumpClick = { showJumpDialog = true
+            inputPage = "" },
+        focusRequester = focusRequester,
+        filteredNickname = filteredNickname, // 新增参数
+        isUserFilterMode = isUserFilterMode, // 新增参数
+        onClearFilter = viewModel::clearUserFilter, // 新增回调
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    )
 
         // 搜索结果和状态显示
         when {
