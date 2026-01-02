@@ -189,9 +189,10 @@ DropdownMenuItem(
             // 检查用户ID是否有效
             if (currentUserId > 0) {
                 // 获取用户昵称用于路由创建
-                val nickname = "我的帖子" // 或者从其他地方获取昵称
+                val nickname = "我" // 或者从其他地方获取昵称
+                val route = MyPosts(currentUserId, nickname).createRoute()
                 // 确保传递 nickname 参数
-                onNavigate("my_posts/$currentUserId/$nickname")
+                onNavigate(route)
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(
