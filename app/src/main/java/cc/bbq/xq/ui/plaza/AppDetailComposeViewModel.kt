@@ -369,10 +369,26 @@ class AppDetailComposeViewModel(
     }
         
     private fun startDownload(downloadUrl: String) {
-    val uri = Uri.parse(downloadUrl)
-    val fileName = uri.lastPathSegment ?: "unknown.apk" // 从 URL 提取文件名
-    getApplication<Application>().startDownload(downloadUrl, fileName)
-    navigateToDownloadEvent.emit(true)
+    viewModelScope.launch {
+        try {
+            // 从 URL 提取真实的文件名
+            val uri = android.net.Uri.parse(downloadUrl)
+            val fileName = uri.lastPathSegment ?: "unknown.apk"
+            
+            // 触发 Service 开始下载
+            getApplication<Application>().startDownload(downloadUrl, fileName)                        
+            
+            // 发送导航到下载管理界面的事件
+            _navigateToDownloadEvent.emit(true)
+            
+            // 发送 Snackbar 事件（仍然可以显示应用名称）
+            val appName = _appDetail.value?.name ?: "未命名应用"
+            _snackbarEvent.emit("开始下载: $appName")
+            
+        } catch (e: Exception) {
+            _errorMessage.value = "启动下载失败: ${e.message}"
+        }
+    }
 }
 
     // 扩展函数：启动下载服务
