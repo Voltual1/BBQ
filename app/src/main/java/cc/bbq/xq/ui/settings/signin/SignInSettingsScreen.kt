@@ -49,61 +49,64 @@ fun SignInSettingsScreen(
         }
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        
-        // 自动签到开关
-        SwitchWithText(
-            text = "开启自动签到",
-            checked = autoSignIn,
-            onCheckedChange = { checked ->
-                scope.launch {
-                    viewModel.setAutoSignIn(checked)
-                    // 如果开启自动签到，立即执行一次签到
-                    if (checked) {
-                        viewModel.signIn(context)
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-                
-        Spacer(modifier = Modifier.height(32.dp))
-        
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            // 签到按钮
-            BBQButton(
-                onClick = {
-                    viewModel.signIn(context)
-                },
-                enabled = signInState !is SignInState.Loading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                text = {
-                    if (signInState is SignInState.Loading) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "立即签到",
-                            style = MaterialTheme.typography.labelLarge
-                        )
+            // 自动签到开关
+            SwitchWithText(
+                text = "开启自动签到",
+                checked = autoSignIn,
+                onCheckedChange = { checked ->
+                    scope.launch {
+                        viewModel.setAutoSignIn(checked)
+                        // 如果开启自动签到，立即执行一次签到
+                        if (checked) {
+                            viewModel.signIn(context)
+                        }
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))                    
-        
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 签到按钮
+                BBQButton(
+                    onClick = {
+                        viewModel.signIn(context)
+                    },
+                    enabled = signInState !is SignInState.Loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    text = {
+                        if (signInState is SignInState.Loading) {
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Text(
+                                text = "立即签到",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+                )
             }
         }
+        
+        // 显示Snackbar
+        BBQSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
