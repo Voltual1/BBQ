@@ -68,10 +68,6 @@ object FileActionUtil {
                 return mime
             }
         }
-        // 对于 APK 文件，强制返回正确的 MIME 类型
-        if (file.name.endsWith(".apk", ignoreCase = true)) {
-            return "application/vnd.android.package-archive"
-        }
         return "*/*" // 未知类型
     }
 
