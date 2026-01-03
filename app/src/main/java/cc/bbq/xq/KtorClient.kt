@@ -364,7 +364,6 @@ data class UserData(
         val app_introduce: String?,
         val app_introduction_image: String?,
         val is_pay: Int,
-        val is_user_pay: Boolean = false,  // 添加正确的用户购买字段
         val pay_money: Int,
         val download: String?,
         val create_time: String,
